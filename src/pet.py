@@ -15,7 +15,7 @@ Windows-focused PyQt5 app:
  - every 30s: random coding joke/question (incl. dev-level dark humor) in
    a speech bubble
  - drag => one of 15 random lines ; drop => another 15
- - 30 min with zero interaction => starts doing its own idle fidgets,
+ - 10 min with zero interaction => starts doing its own idle fidgets,
    random poses from assets/idle_extras/, every 45-110s until touched again
  - on shutdown/logoff => says bye (briefly delays shutdown)
 """
@@ -62,7 +62,7 @@ SPRITE_SIZE = 150  # on-screen pet size (px)
 
 # how long (ms) the pet has to go completely untouched (no drag, no click)
 # before it starts doing its own little idle quirks
-IDLE_FIDGET_AFTER_MS = 30 * 60 * 1000
+IDLE_FIDGET_AFTER_MS = 10 * 60 * 1000
 # once that threshold is crossed, roughly how often (seconds, min/max) it
 # fires off another one — randomized so it doesn't feel like a cron job
 IDLE_FIDGET_INTERVAL_RANGE = (45, 110)
@@ -478,7 +478,7 @@ KNOWN_APPS = set(APP_QUESTIONS.keys())
 
 MUSIC_PROCS = {"spotify.exe", "music.exe", "wmplayer.exe", "groove.exe"}
 
-# Idle fidgets — after 30 min with zero interaction the pet starts doing
+# Idle fidgets — after 10 min with zero interaction the pet starts doing
 # its own little things, pulled from the static mascot-pack art dropped
 # into assets/idle_extras/. Hand-written captions for the ones worth a
 # proper line; anything else just gets its filename humanized so dropping
@@ -891,7 +891,7 @@ class PetWidget(QWidget):
             pool += APP_QUESTIONS[proc]
         self.say(random.choice(pool), duration_ms=5000)
 
-    # ---- idle fidgets (no touch for 30+ minutes) ----
+    # ---- idle fidgets (no touch for 10+ minutes) ----
     def _mark_interaction(self):
         self._last_interaction = time.time()
 
