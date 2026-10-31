@@ -1,100 +1,62 @@
 # claude-animated-pet
 
-A desktop pet that lives on your Windows screen, reacts to whatever app
-you're using, and helps you jump into Claude Code with one click.
+A desktop pet for Windows that lives on your screen, reacts to what you are doing, and jumps you into Claude with one click.
 
-Built by [@chaitanybuilds](https://github.com/chaitanybuilds).
+Built by [@chaitanybuilds](https://github.com/chaitanybuilds). Shared free of charge.
 
-> Unofficial fan project, shared free of charge. Not affiliated with,
-> endorsed by, or sponsored by Anthropic. The name "Claude" is used here
-> only to describe compatibility with Claude / Claude Code. "Claude" and
-> related marks belong to Anthropic. See [Disclaimer](#disclaimer) and
-> [License](#license) below.
+> Unofficial fan project. Not affiliated with, endorsed by, or sponsored by Anthropic. The name "Claude" is used only to describe compatibility with Claude / Claude Code. "Claude" and related marks belong to Anthropic.
 
 ![status](https://img.shields.io/badge/platform-Windows-blue)
 ![license](https://img.shields.io/badge/license-MIT-green)
 
-## Features
+## What it does
 
-- Transparent, draggable, always-on-top sprite sitting on your desktop —
-  no window chrome, no taskbar icon, just the pet.
-- Greets you at login with a welcome bubble, and says bye before shutdown
-  (briefly holds shutdown just long enough to show the message).
-- Launches right away instead of 10-15s late. The old Startup-folder
-  shortcut hit Windows' built-in startup stagger delay; the installer now
-  registers a Scheduled Task (`ONLOGON`, highest run level) instead, which
-  fires immediately. The process also bumps its own scheduling priority
-  (realtime, then high, then above-normal, whichever Windows grants) on
-  launch.
-- Reacts to the app you're using, checked every few seconds:
-  - Discord, Chrome, VS Code, Claude desktop, Steam, Unity and Unity Hub
-    each have their own pool of 50 app-specific one-liners/questions it
-    randomly throws at you (you're not expected to answer, it's just
-    commentary).
-  - Any app it doesn't recognize gets "what is this place?" (a few
-    variants).
-  - Music apps playing switches it into a bouncier "vibing" animation.
-  - Terminals get their own pools too, 50 English sarcastic dark/funny
-    lines each: PowerShell (powershell.exe, pwsh.exe), cmd (cmd.exe,
-    conhost.exe), Git (git.exe, git-bash.exe, bash.exe from a Git
-    install), Node (node.exe), Python (python.exe), Windows Terminal
-    (WindowsTerminal.exe, wt.exe), and WSL (wsl.exe, wslhost.exe,
-    bash.exe from System32). conhost.exe is resolved by its parent
-    shell, and pythonw.exe stays ignored so the pet does not react to
-    its own process. The 30-second joke timer also draws from the
-    current terminal's pool, just like it does for known apps.
-- Random coding jokes, now including dev-level dark humor (burnout,
-  on-call, legacy code, the usual) in a speech bubble every 30 seconds.
-- Click it and it finds the Claude Desktop app via its Start Menu shortcut
-  (no hardcoded `claude.exe` path, since the installed exe lives in a
-  version-numbered folder that changes on every auto-update) and launches
-  it directly — no terminal window, no `claude` CLI call.
-- Drag it anywhere on your desktop for one of 15 random lines while
-  dragging, another 15 when you drop it. Remembers where you left it,
-  every time you reboot.
-- Goes quiet for 10 minutes, then does its own thing. If nobody's touched
-  it for 10 minutes, it starts firing off little idle quirks every
-  45-110s — random poses pulled from `assets/idle_extras/` (debugging,
-  rage-coffee, shipping a rocket, crying at merge conflicts, etc.) each
-  with its own caption, until you interact with it again.
-- Pixel-art mascot animation — bob, sway, squash/stretch, rotate — all
-  built from static source art via pure transform animation (no
-  frame-by-frame hand-drawing needed), so new poses are easy to add. The
-  frame loop now ping-pongs instead of snapping back to frame 0, plus a
-  subtle sine-wave bob layered on top, for smoother idle/talk/vibe motion.
+- Transparent, draggable, always-on-top pixel pet. No window chrome, no taskbar icon.
+- Greets you at login, and says bye before shutdown. It briefly holds shutdown just long enough to show the bye message.
+- Launches fast at login. The installer registers a Scheduled Task (`ClaudeAnimatedPet`, runs at logon, highest run level) instead of a Startup-folder shortcut, so it does not hit Windows' 10-15 second startup delay. It also bumps its own process priority on launch.
+- Reacts to the app in front of you, checked every 4 seconds. Each known app gets its own 50-line pool of random one-liners, in English, sarcastic and dark/funny. You are not expected to answer, it is just commentary.
+  - Discord, Chrome, VS Code, Claude, Steam, Unity, Unity Hub
+  - Any app it does not recognise gets a confused line. Music apps switch it to a bouncier "vibing" animation.
+- Reacts to terminals too, each with its own 50-line pool, also English, sarcastic and dark/funny:
+  - PowerShell (`powershell.exe`, `pwsh.exe`)
+  - cmd (`cmd.exe`, `conhost.exe`)
+  - Git (`git.exe`, `git-bash.exe`, Git's `bash.exe`)
+  - Node (`node.exe`)
+  - Python (`python.exe`)
+  - Windows Terminal (`WindowsTerminal.exe`, `wt.exe`)
+  - WSL (`wsl.exe`, `wslhost.exe`, System32 `bash.exe`)
+  - `bash.exe` is resolved by its exe path, and `conhost.exe` by its parent shell, so Git Bash and WSL are not mixed up. `pythonw.exe` stays ignored, because that is how the pet itself runs.
+- Watches your system, on a separate timer, so app jokes and idle fidgets keep working:
+  - RAM at 75% or more of total RAM: 20 jokes, mascot `system-monitoring-dashboard.png`
+  - CPU at 80% or more: 20 jokes, mascot `processing-logic-symbols.png`
+  - Temperature at 50°C or more: 20 jokes, mascot `fine-under-pressure.png`
+  - Each trigger has a 5-minute cooldown, and if several fire at once only one is picked, so it does not spam. Temperature is best-effort on Windows: `psutil` does not report it there, so the code falls back to `nvidia-smi` if present, otherwise that trigger stays silent while RAM and CPU keep working.
+- Tells a random coding joke every 30 seconds. If the foreground app is a known app or terminal, that app's pool is added to the joke pool for that round.
+- Click it and it opens a terminal and runs the `claude` CLI, then closes that terminal once Claude is found or after 25 seconds. The pet says "launching claude for you..." first, then "LETS CODE 💻🔥".
+- Drag it anywhere for a random drag line, drop it for a random drop line. It remembers where you left it, every reboot.
+- Goes quiet for 10 minutes, then starts doing its own thing. If nobody has touched it for 10 minutes, it fires a random idle pose from `assets/idle_extras/` every 45-110 seconds, each with its own caption, until you interact again.
+- Pixel-art animation built from static source art with transforms (bob, sway, squash/stretch, rotate). The frame loop ping-pongs instead of snapping back to frame 0, with a subtle sine-wave bob on top.
+- Alt+F4 and window close are ignored on purpose, so the pet stays alive until shutdown. To quit manually, end the task in Task Manager.
 
-## Install (first time)
+## Install
 
-Requirements: Windows 10/11, [Python 3.9+](https://www.python.org/downloads/)
-installed and on your `PATH` (check "Add python.exe to PATH" during setup).
+Requirements: Windows 10/11, [Python 3.9+](https://www.python.org/downloads/) installed and on your `PATH` (check "Add python.exe to PATH" during setup).
 
 1. Clone or download this repo, anywhere you like:
    ```
    git clone https://github.com/chaitanybuilds/claude-animated-pet.git
    ```
-   The app saves its position file and loads its sprites relative to its own
-   folder, so no fixed path is required — put it in `Documents`, `Desktop`,
-   wherever.
+   The app saves its position file and loads its sprites relative to its own folder, so no fixed path is required.
 
-2. Run the installer. Double-click `install.bat` inside that folder.
-   The installer will ask for administrator rights once (a Windows
-   permission prompt - click Yes). That is required because the fast
-   logon task is registered at the highest run level, and Windows
-   refuses that registration from a normal process with
-   "Access is denied". If you click No, the installer exits without
-   registering anything.
+2. Double-click `install.bat` inside that folder.
+   The installer will ask for administrator rights once (a Windows permission prompt, click Yes). That is required because the fast logon task is registered at the highest run level, and Windows refuses that registration from a normal process with "Access is denied". If you click No, the installer exits without registering anything.
    This will:
    - `pip install` the dependencies (PyQt5, psutil, pywin32)
-   - register a Scheduled Task (`ClaudeAnimatedPet`, runs at logon, highest
-     run level) so the pet launches automatically, with no console window
-     and without the ~10s delay Windows adds to classic Startup-folder
-     apps, every time you log in. Only if Task Scheduler registration
-     still fails for another reason does it fall back to a silent
-     Startup-folder shortcut instead (which launches about 10-15s late).
+   - Register the Scheduled Task described above. Only if Task Scheduler registration still fails for another reason does it fall back to a silent Startup-folder shortcut instead (which launches about 10-15 seconds late).
 
 3. Start it right now, without rebooting, by double-clicking `run_pet.bat`.
 
-That's it — from your next login onward, it just shows up on its own.
+From your next login onward, it just shows up on its own.
 
 ### Uninstalling
 
@@ -102,92 +64,54 @@ Remove the Scheduled Task:
 ```
 schtasks /Delete /TN "ClaudeAnimatedPet" /F
 ```
-If it fell back to the Startup-folder method instead, delete
-`ClaudeAnimatedPet.vbs` from
-`%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup`. Then delete the
-project folder. That's the entire footprint — no registry entries, no
-background services.
+If it fell back to the Startup-folder method instead, delete `ClaudeAnimatedPet.vbs` from `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup`. Then delete the project folder. That is the entire footprint: no registry entries, no background services.
 
 ## Project structure
 
 ```
 claude-animated-pet/
-├── src/pet.py        # the app itself (PyQt5)
-├── assets/frames/<state>/    # animation frames per pet state
-├── assets/idle_extras/       # static poses used for 10-min-idle fidgets
-├── gen_sprites_mascot.py     # builds animated frames from mascot pack art
-├── gen_sprites.py            # original procedural (hand-coded) blocky art
+├── src/pet.py                 # the app itself (PyQt5)
+├── assets/frames/<state>/     # animation frames per pet state
+├── assets/idle_extras/        # static poses used for 10-min idle fidgets and stats mascots
+├── gen_sprites_mascot.py      # builds animated frames from mascot pack art
+├── gen_sprites.py             # original procedural (hand-coded) blocky art
 ├── install.bat                # one-time setup + autostart registration
-├── run_pet.bat                 # manual launch
+├── run_pet.bat                # manual launch
 ├── requirements.txt
-├── ASSETS-LICENSE.md       # artwork license (assets/ is NOT MIT)
+├── ASSETS-LICENSE.md          # artwork license (assets/ is NOT MIT)
 └── pet_config.json            # auto-created; remembers screen position
 ```
 
 ## Customizing
 
-- Add or change app reactions by editing the `_DISCORD_BASE`/`_EXTRA`,
-  `_CHROME_BASE`/`_EXTRA`, etc. lists near the top of `src/pet.py`. Each
-  app's final 50-line pool is built by `_expand_pool()` from those plus
-  template filler, keyed by Windows process name (e.g. `"code.exe"`).
-- Add or change jokes by editing the `CODING_JOKES` list.
-- Add idle fidgets by dropping a `.png` into `assets/idle_extras/`. It'll
-  get picked up automatically. Give it a line in `FIDGET_CAPTIONS` (keyed
-  by filename without `.png`) or it'll just use a humanized version of
-  the filename.
-- Change animations by editing `assets/frames/<state>/`, or regenerate
-  with `python gen_sprites_mascot.py <path-to-source-art>` — see the
-  comments at the top of that file for how each state's motion is built.
-  The ping-pong loop and sine bob live in `_tick_animation`/`_apply_bob`
-  in `src/pet.py`.
-- Change idle-fidget timing via `IDLE_FIDGET_AFTER_MS` (default 10 min)
-  and `IDLE_FIDGET_INTERVAL_RANGE` (default 45-110s between fidgets once
-  idle) near the top of `src/pet.py`.
-- Change polling frequency via `app_timer.start(4_000)` (foreground-app
-  check) and `joke_timer.start(30_000)` (jokes) in `PetWidget.__init__`.
+- App reactions: edit the app lists near the top of `src/pet.py`, for example `_DISCORD_BASE` / `_EXTRA`, `_CHROME_BASE` / `_EXTRA`. Each app's final 50-line pool is built by `_expand_pool()` from those plus template filler, keyed by Windows process name (for example `"code.exe"`).
+- Terminal reactions: edit `_POWERSHELL_POOL`, `_CMD_POOL`, `_GIT_POOL`, `_NODE_POOL`, `_PYTHON_POOL`, `_TERMINAL_POOL`, `_WSL_POOL` in `src/pet.py`. Each is 50 hand-written lines, no template filler.
+- Stats reactions: edit `_RAM_STATS`, `_CPU_STATS`, `_TEMP_STATS` in `src/pet.py`, and the thresholds `RAM_THRESHOLD`, `CPU_THRESHOLD`, `TEMP_THRESHOLD_C`, and cooldown `STATS_COOLDOWN_S`.
+- Jokes: edit the `CODING_JOKES` list.
+- Idle fidgets: drop a `.png` into `assets/idle_extras/`. It will get picked up automatically. Give it a line in `FIDGET_CAPTIONS` (keyed by filename without `.png`) or it will just use a humanized version of the filename.
+- Animations: edit `assets/frames/<state>/`, or regenerate with `python gen_sprites_mascot.py <path-to-source-art>`. The ping-pong loop and sine bob live in `_tick_animation` / `_apply_bob` in `src/pet.py`.
+- Idle timing: change `IDLE_FIDGET_AFTER_MS` (default 10 min) and `IDLE_FIDGET_INTERVAL_RANGE` (default 45-110 seconds between fidgets once idle) near the top of `src/pet.py`.
+- Polling: change `app_timer.start(4_000)` (foreground-app check), `joke_timer.start(30_000)` (jokes), `fidget_timer.start(30_000)` (idle check), and `stats_timer.start(30_000)` (system stats check) in `PetWidget.__init__`.
 
 ## Platform notes
 
-The app-detection, auto-start-at-login, shutdown hook, and Claude-launch
-features all depend on Windows-only APIs (`pywin32`, foreground window
-polling, `ShutdownBlockReasonCreate`). On macOS/Linux only the pet
-rendering, dragging and timers will run.
+App detection, auto-start at login, shutdown hook, and Claude launch all depend on Windows-only APIs (`pywin32`, foreground window polling, `ShutdownBlockReasonCreate`). On macOS/Linux only the pet rendering, dragging, and timers will run.
 
 ## Disclaimer
 
-This is an unofficial, non-commercial fan project. It is not an Anthropic
-product, and it is not affiliated with, endorsed by, or sponsored by
-Anthropic. The mascot art is not official Anthropic artwork. Nothing in
-this repo claims ownership of the "Claude" name or marks, or of the
-third-party illustration pack used for the mascot art.
+This is an unofficial, non-commercial fan project. It is not an Anthropic product, and it is not affiliated with, endorsed by, or sponsored by Anthropic. The mascot art is not official Anthropic artwork. Nothing in this repo claims ownership of the "Claude" name or marks, or of the third-party illustration pack used for the mascot art.
 
 ## Credits
 
-Illustrations by [GetIllustrations.com](https://getillustrations.com) —
-mascot artwork from the
-[Claude Mascot Pack](https://getillustrations.com/illustration-pack/claude-mascot-pack).
-The images in `assets/frames/` and `assets/idle_extras/` are derived from
-that pack, so the same artwork rules apply to them. This artwork is NOT
-covered by this repo's MIT license, and it is NOT owned by the author of
-this repo. It is used under GetIllustrations' Free License, which
-requires this visible credit. See [ASSETS-LICENSE.md](ASSETS-LICENSE.md)
-and GetIllustrations' own license page:
-https://getillustrations.com/license — if that page and this summary ever
-differ, the original license governs.
+Illustrations by [GetIllustrations.com](https://getillustrations.com) — mascot artwork from the [Claude Mascot Pack](https://getillustrations.com/illustration-pack/claude-mascot-pack).
 
-Everything in `src/`, `gen_sprites*.py`, and the installer scripts is
-original code and is covered by the MIT license below, except where a
-file itself says otherwise.
+The images in `assets/frames/` and `assets/idle_extras/` are derived from that pack, so the same artwork rules apply to them. This artwork is NOT covered by this repo's MIT license, and it is NOT owned by the author of this repo. It is used under GetIllustrations' Free License, which requires this visible credit. See [ASSETS-LICENSE.md](ASSETS-LICENSE.md) and GetIllustrations' own license page: https://getillustrations.com/license — if that page and this summary ever differ, the original license governs.
+
+Everything in `src/`, `gen_sprites*.py`, and the installer scripts is original code and is covered by the MIT license below, except where a file itself says otherwise.
 
 ## License
 
-- Code and documentation: MIT — see [LICENSE](LICENSE). The MIT license
-  applies only to the original code/documentation, not to the artwork.
-- Artwork in `assets/`: NOT MIT. See [ASSETS-LICENSE.md](ASSETS-LICENSE.md).
-  Do not sell, resell, or redistribute the `assets/` images as standalone
-  files, and do not claim them as your own. If you fork this repo, keep
-  the credit above and the `ASSETS-LICENSE.md` file intact.
+- Code and documentation: MIT — see [LICENSE](LICENSE). The MIT license applies only to the original code/documentation, not to the artwork.
+- Artwork in `assets/`: NOT MIT. See [ASSETS-LICENSE.md](ASSETS-LICENSE.md). Do not sell, resell, or redistribute the `assets/` images as standalone files, and do not claim them as your own. If you fork this repo, keep the credit above and the `ASSETS-LICENSE.md` file intact.
 
-This project is shared free of charge. Selling a bundle that includes
-the `assets/` artwork would break the artwork license, even though the
-code itself is MIT.
+This project is shared free of charge. Selling a bundle that includes the `assets/` artwork would break the artwork license, even though the code itself is MIT.
