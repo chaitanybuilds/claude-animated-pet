@@ -34,6 +34,15 @@ Built by [@chaitanybuilds](https://github.com/chaitanybuilds).
   - Any app it doesn't recognize gets "what is this place?" (a few
     variants).
   - Music apps playing switches it into a bouncier "vibing" animation.
+  - Terminals get their own pools too, 50 English sarcastic dark/funny
+    lines each: PowerShell (powershell.exe, pwsh.exe), cmd (cmd.exe,
+    conhost.exe), Git (git.exe, git-bash.exe, bash.exe from a Git
+    install), Node (node.exe), Python (python.exe), Windows Terminal
+    (WindowsTerminal.exe, wt.exe), and WSL (wsl.exe, wslhost.exe,
+    bash.exe from System32). conhost.exe is resolved by its parent
+    shell, and pythonw.exe stays ignored so the pet does not react to
+    its own process. The 30-second joke timer also draws from the
+    current terminal's pool, just like it does for known apps.
 - Random coding jokes, now including dev-level dark humor (burnout,
   on-call, legacy code, the usual) in a speech bubble every 30 seconds.
 - Click it and it finds the Claude Desktop app via its Start Menu shortcut
