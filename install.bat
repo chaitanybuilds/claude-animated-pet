@@ -1,6 +1,37 @@
 @echo off
 REM claude-animated-pet installer - registers the pet to auto-start at Windows login.
 REM Run this from inside the cloned repo folder.
+REM
+REM Why this asks for administrator rights first:
+REM The fast logon task is registered with the highest run level, and
+REM Windows refuses that registration from a normal, non-elevated
+REM process with "Access is denied". Without admin rights the old
+REM installer silently fell back to the Startup folder, which is why
+REM the pet then showed up 10-15s late. This version asks for admin
+REM once, up front, so the Scheduled Task actually gets created.
+REM If you click No on the permission prompt, this installer exits
+REM without changing anything - run it again and click Yes to get
+REM the fast logon task.
+
+REM Check for admin rights. "net session" only succeeds when elevated.
+net session >nul 2>&1
+if %ERRORLEVEL% EQU 0 goto :gotAdmin
+echo.
+echo This installer needs administrator rights to register the fast logon task.
+echo A Windows permission prompt will appear - click Yes to continue.
+echo If you click No, the installer will exit without registering anything.
+echo Set UAC = CreateObject^("Shell.Application"^) > "%TEMP%\claude-pet-getadmin.vbs"
+echo UAC.ShellExecute "cmd.exe", "/c ""%~f0""", "", "runas", 1 >> "%TEMP%\claude-pet-getadmin.vbs"
+"%TEMP%\claude-pet-getadmin.vbs"
+REM Do not delete the helper here - the elevated copy reads it first
+REM and deletes it itself, below, so there is no read/delete race.
+exit /b
+
+:gotAdmin
+if exist "%TEMP%\claude-pet-getadmin.vbs" del "%TEMP%\claude-pet-getadmin.vbs"
+REM An elevated command prompt starts in System32, so go back to the
+REM folder this script lives in before doing anything else.
+cd /d "%~dp0"
 
 setlocal
 set INSTALL_DIR=%~dp0
@@ -23,15 +54,28 @@ if exist "%VBS_PATH%" del "%VBS_PATH%"
 
 echo Registering a Scheduled Task to launch at logon (skips the Startup-folder delay)...
 schtasks /Create /F /SC ONLOGON /RL HIGHEST /IT /TN "%TASK_NAME%" /TR "pythonw.exe \"%INSTALL_DIR%src\pet.py\""
-if %ERRORLEVEL% NEQ 0 (
-    echo Scheduled Task creation failed - falling back to the Startup-folder method.
-    (
-    echo Set WshShell = CreateObject^("WScript.Shell"^)
-    echo WshShell.CurrentDirectory = "%INSTALL_DIR%"
-    echo WshShell.Run "pythonw ""%INSTALL_DIR%src\pet.py""", 0, False
-    ) > "%VBS_PATH%"
-)
+if %ERRORLEVEL% NEQ 0 goto :fallback
+REM Verify the task actually exists now that we are elevated. A plain
+REM query from a non-elevated prompt cannot see highest-level tasks,
+REM which is the confusing "no scheduled tasks at your access level"
+REM message - so this check only runs here, in the elevated installer.
+schtasks /Query /TN "%TASK_NAME%" >nul 2>&1
+if %ERRORLEVEL% NEQ 0 goto :fallback
+goto :done
 
+:fallback
+echo Scheduled Task creation failed - falling back to the Startup-folder method.
+echo The pet will still autostart, but about 10-15s late after login.
+echo To get the fast launch instead, run install.bat again and click Yes
+echo on the administrator permission prompt.
+(
+echo Set WshShell = CreateObject^("WScript.Shell"^)
+echo WshShell.CurrentDirectory = "%INSTALL_DIR%"
+echo WshShell.Run "pythonw ""%INSTALL_DIR%src\pet.py""", 0, False
+) > "%VBS_PATH%"
+goto :done
+
+:done
 echo.
 echo Done! claude-animated-pet will now launch automatically every time you log in,
 echo right away instead of 10-15s late.
