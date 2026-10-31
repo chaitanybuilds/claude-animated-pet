@@ -37,8 +37,8 @@ Built by [@chaitanybuilds](https://github.com/chaitanybuilds).
 - Drag it anywhere on your desktop for one of 15 random lines while
   dragging, another 15 when you drop it. Remembers where you left it,
   every time you reboot.
-- Goes quiet for 30 minutes, then does its own thing. If nobody's touched
-  it for half an hour, it starts firing off little idle quirks every
+- Goes quiet for 10 minutes, then does its own thing. If nobody's touched
+  it for 10 minutes, it starts firing off little idle quirks every
   45-110s — random poses pulled from `assets/idle_extras/` (debugging,
   rage-coffee, shipping a rocket, crying at merge conflicts, etc.) each
   with its own caption, until you interact with it again.
@@ -99,7 +99,7 @@ background services.
 claude-animated-pet/
 ├── src/pet.py        # the app itself (PyQt5)
 ├── assets/frames/<state>/    # animation frames per pet state
-├── assets/idle_extras/       # static poses used for 30-min-idle fidgets
+├── assets/idle_extras/       # static poses used for 10-min-idle fidgets
 ├── gen_sprites_mascot.py     # builds animated frames from mascot pack art
 ├── gen_sprites.py            # original procedural (hand-coded) blocky art
 ├── install.bat                # one-time setup + autostart registration
@@ -124,7 +124,7 @@ claude-animated-pet/
   comments at the top of that file for how each state's motion is built.
   The ping-pong loop and sine bob live in `_tick_animation`/`_apply_bob`
   in `src/pet.py`.
-- Change idle-fidget timing via `IDLE_FIDGET_AFTER_MS` (default 30 min)
+- Change idle-fidget timing via `IDLE_FIDGET_AFTER_MS` (default 10 min)
   and `IDLE_FIDGET_INTERVAL_RANGE` (default 45-110s between fidgets once
   idle) near the top of `src/pet.py`.
 - Change polling frequency via `app_timer.start(4_000)` (foreground-app
