@@ -91,7 +91,7 @@ def frame(state, idx, builder):
     img.save(os.path.join(folder, f"{idx:04d}.png"))
 
 
-# ---- IDLE (gentle breathing bob, blink occasionally) ----
+# IDLE (gentle breathing bob, blink occasionally)
 idle_frames = []
 for i in range(24):
     bob = round(1 * abs(((i % 12) - 6) / 6))  # 0..1 bob
@@ -101,7 +101,7 @@ for i in range(24):
         draw_eyes_round(d, l, t, r, bt, blink=blink)
     frame("idle", i, b)
 
-# ---- VIBE (music bob, happy eyes, side sway) ----
+# VIBE (music bob, happy eyes, side sway)
 for i in range(20):
     import math
     phase = i / 20 * 2 * math.pi
@@ -112,7 +112,7 @@ for i in range(20):
         draw_eyes_round(d, l, t, r, bt, happy=True, look=lean)
     frame("vibe", i, b)
 
-# ---- CURIOUS / TALK (used while bubble shown, slight head tilt via lean) ----
+# CURIOUS / TALK (used while bubble shown, slight head tilt via lean)
 for i in range(10):
     lean = 1 if i % 4 < 2 else 0
     def b(d, lean=lean):
@@ -120,7 +120,7 @@ for i in range(10):
         draw_eyes_round(d, l, t, r, bt, look=lean)
     frame("talk", i, b)
 
-# ---- DRAG (squashed/stretched, wide eyes excited) ----
+# DRAG (squashed/stretched, wide eyes excited)
 for i in range(6):
     squash = 1
     def b(d, squash=squash):
@@ -128,14 +128,14 @@ for i in range(6):
         draw_eyes_round(d, l, t, r, bt, happy=(i % 2 == 0))
     frame("drag", i, b)
 
-# ---- CLICK (squint / excited launch) ----
+# CLICK (squint / excited launch)
 for i in range(8):
     def b(d, i=i):
         l, t, r, bt = draw_body(d, bob=-1 if i < 4 else 0)
         draw_eyes_round(d, l, t, r, bt, happy=True)
     frame("click", i, b)
 
-# ---- SLEEP-ish unknown "what is this place" (confused, eyes look around) ----
+# SLEEP-ish unknown "what is this place" (confused, eyes look around)
 for i in range(12):
     look = [-1, -1, 0, 1, 1, 0][i % 6]
     def b(d, look=look):

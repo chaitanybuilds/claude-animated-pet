@@ -65,9 +65,7 @@ IDLE_FIDGET_AFTER_MS = 30 * 60 * 1000
 # fires off another one — randomized so it doesn't feel like a cron job
 IDLE_FIDGET_INTERVAL_RANGE = (45, 110)
 
-# --------------------------------------------------------------------------
 # Content: jokes, per-app questions, unknown-app lines
-# --------------------------------------------------------------------------
 
 CODING_JOKES = [
     "Why do programmers prefer dark mode? Because light attracts bugs.",
@@ -132,7 +130,6 @@ def _expand_pool(base, extra=None, templates=None, subjects=None, target=50):
             if line not in pool:
                 pool.append(line)
     return pool[:target]
-
 
 _DISCORD_BASE = [
     "Is this actually a work server or are we just chatting?",
@@ -479,13 +476,11 @@ KNOWN_APPS = set(APP_QUESTIONS.keys())
 
 MUSIC_PROCS = {"spotify.exe", "music.exe", "wmplayer.exe", "groove.exe"}
 
-# --------------------------------------------------------------------------
 # Idle fidgets — after 30 min with zero interaction the pet starts doing
 # its own little things, pulled from the static mascot-pack art dropped
 # into assets/idle_extras/. Hand-written captions for the ones worth a
 # proper line; anything else just gets its filename humanized so dropping
 # new art in there works out of the box with no code changes.
-# --------------------------------------------------------------------------
 
 FIDGET_CAPTIONS = {
     "debugging-system-bugs": "found a bug. several bugs. it's bugs all the way down.",
@@ -550,23 +545,17 @@ FIDGET_CAPTIONS = {
     "error-state-pixel": "error state achieved. working as intended, unfortunately.",
 }
 
-
 def _humanize_fidget_name(stem):
     return stem.replace("-", " ").replace("_", " ").strip()
-
 
 def _load_fidget_files():
     if not os.path.isdir(IDLE_EXTRAS_DIR):
         return []
     return sorted(f for f in os.listdir(IDLE_EXTRAS_DIR) if f.lower().endswith(".png"))
 
-
 FIDGET_FILES = _load_fidget_files()
 
-
-# --------------------------------------------------------------------------
 # Foreground app watcher
-# --------------------------------------------------------------------------
 
 def get_foreground_process_name():
     if not IS_WINDOWS or win32gui is None or psutil is None:
@@ -578,7 +567,6 @@ def get_foreground_process_name():
         return proc.name().lower()
     except Exception:
         return None
-
 
 def set_process_priority_extreme():
     """Push this process to the top of Windows' scheduler so the pet isn't
@@ -602,7 +590,6 @@ def set_process_priority_extreme():
             return
         except Exception:
             continue
-
 
 def find_claude_desktop_shortcut():
     """Locate the Claude desktop app's Start Menu shortcut instead of
@@ -644,10 +631,7 @@ def find_claude_desktop_shortcut():
                     best = full
     return best
 
-
-# --------------------------------------------------------------------------
 # Speech bubble
-# --------------------------------------------------------------------------
 
 class SpeechBubble(QWidget):
     def __init__(self):
@@ -700,10 +684,7 @@ class SpeechBubble(QWidget):
         self._timer.stop()
         self._timer.start(duration_ms)
 
-
-# --------------------------------------------------------------------------
 # Sprite loader / animator
-# --------------------------------------------------------------------------
 
 class SpriteBank:
     def __init__(self):
@@ -723,10 +704,7 @@ class SpriteBank:
         self.cache[state] = pixmaps
         return pixmaps
 
-
-# --------------------------------------------------------------------------
 # Main pet widget
-# --------------------------------------------------------------------------
 
 class PetWidget(QWidget):
     def __init__(self):
@@ -1050,10 +1028,7 @@ class PetWidget(QWidget):
         self._save_position()
         event.accept()
 
-
-# --------------------------------------------------------------------------
 # Windows shutdown/logoff hook
-# --------------------------------------------------------------------------
 
 def install_shutdown_hook(app, pet):
     """Intercept WM_QUERYENDSESSION so we can show the bye bubble before
@@ -1108,7 +1083,6 @@ def install_shutdown_hook(app, pet):
     except Exception:
         pass
 
-
 def main():
     set_process_priority_extreme()
     app = QApplication(sys.argv)
@@ -1116,7 +1090,6 @@ def main():
     pet = PetWidget()
     install_shutdown_hook(app, pet)
     sys.exit(app.exec_())
-
 
 if __name__ == "__main__":
     main()
