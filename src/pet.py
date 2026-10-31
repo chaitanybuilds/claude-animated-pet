@@ -18,6 +18,9 @@ Windows-focused PyQt5 app:
  - every 30s: random coding joke/question (incl. dev-level dark humor) in
    a speech bubble
  - drag => one of 15 random lines ; drop => another 15
+ - system stats (separate timer, other logics keep running): RAM >= 75%,
+   CPU >= 80%, or temperature >= 50C => one random joke from that trigger's
+   20-line pool, with its own mascot, 5-min cooldown per trigger
  - 10 min with zero interaction => starts doing its own idle fidgets,
    random poses from assets/idle_extras/, every 45-110s until touched again
  - on shutdown/logoff => says bye (briefly delays shutdown)
@@ -91,7 +94,6 @@ CODING_JOKES = [
     "Knock knock. Who's there? Race condition. Race condition who? *crash before you can answer*",
     "Why do programmers hate nature? Too many bugs, not enough documentation.",
     "What's a programmer's favorite place? The foo bar.",
-    # --- dev-level dark jokes ---
     "The code works. Nobody, including you, knows why. Don't touch it.",
     "Documentation is a love letter you write to someone who will never read it: future you.",
     "Your code doesn't have technical debt, it has technical trauma.",
@@ -371,9 +373,7 @@ _UNITYHUB_SUBJECTS = [
     "that broken import", "the license popup",
 ]
 
-# shared filler templates used to top up the four main pools (Discord,
-# Chrome, VS Code, Claude) past their hand-written lines up to 50 — the
-# hand-written ones always come first and are never pushed out
+# Filler templates top up the four main pools to 50; hand-written lines come first.
 _GENERIC_TEMPLATES = [
     "Is {s} actually worth the detour right now?",
     "{s} again? Focus, come on.",
@@ -436,10 +436,7 @@ APP_QUESTIONS = {
 
 
 
-# Terminal pools — 50 hand-written lines each, in English, sarcastic
-# dark/funny in the same style as the other app pools. No template filler
-# here: every line is specific to its terminal, so switching from
-# PowerShell to Git Bash actually changes what the pet says.
+# Terminal pools: 50 hand-written lines each, no template filler.
 _POWERSHELL_POOL = [
     'Is this a script or a ransom note written in Verb-Noun?',
     'Be honest, did you Google that cmdlet or just guess Get-Something until it worked?',
@@ -821,10 +818,7 @@ TERMINAL_QUESTIONS = {
     "wsl": _WSL_POOL,
 }
 
-# process name -> terminal category. bash.exe and conhost.exe are special:
-# bash.exe is WSL's launcher in System32 but Git's bash in a Git install,
-# and conhost.exe is just the console host for whatever shell is inside it,
-# so those two are resolved by exe path / parent process below, not by name.
+# bash.exe and conhost.exe are resolved by exe path / parent process, not name alone.
 TERMINAL_MAP = {
     "powershell.exe": "powershell",
     "pwsh.exe": "powershell",
@@ -851,6 +845,89 @@ def _resolve_terminal_category(proc_name, exe_path=None, parent_name=None):
             return "wsl"
         return "cmd"
     return TERMINAL_MAP.get(proc_name)
+
+
+
+# Stats jokes: 20 each. RAM >= 75%, CPU >= 80%, temp >= 50C.
+# Separate timer, 5-minute cooldown per trigger, one trigger per check.
+_RAM_STATS = [
+    'RAM is at 75% and you are still opening tabs like RAM is free. It is not free, it is dying.',
+    'Congratulations, you have turned your PC into a Chrome tab museum with no exit plan.',
+    'RAM is full, your patience is empty, and somehow you are still opening one more app.',
+    'Is this multitasking or are you just collecting open windows like they are Pokemon?',
+    'Your RAM just filed for bankruptcy and you are the reason.',
+    'Close a tab. No, not that one. Any tab. Literally any tab will do.',
+    'RAM at 75% is not a warning, it is a cry for help written in swap file.',
+    'You have more tabs open than you have brain cells left today, and both are struggling.',
+    'This PC is not slow, it is just carrying your entire digital life on its back.',
+    'RAM is begging for mercy and you just opened Discord, Spotify, and a game at the same time.',
+    'Your memory usage is higher than your memory of what you were actually doing.',
+    'Is this a computer or a hoarder house with a processor?',
+    'RAM just hit 75% and your PC is now running on hope and page file.',
+    'You keep saying just one more tab, and RAM keeps saying just one more funeral.',
+    'Close Chrome and suddenly your PC feels like it just got a second life. Coincidence? No.',
+    'Your RAM is full because you treat closing apps like a personal betrayal.',
+    'This is not multitasking, this is digital self-harm with extra steps.',
+    'RAM usage is at 75%, your productivity is at 5%, and somehow both are your fault.',
+    'Your PC is swapping so hard it is basically writing a diary on your SSD now.',
+    'RAM is at 75% and you are still surprised the fan sounds like a jet engine. Really?',
+]
+
+_CPU_STATS = [
+    'CPU is at 80% and you are acting like this is normal. It is not normal, it is a meltdown in progress.',
+    'Your processor is working harder than you have worked all week, and it is not even getting paid.',
+    'Is this a PC or a space heater that also runs Chrome?',
+    'CPU just hit 80% and your fan just started auditioning for a horror movie.',
+    'You have one app eating all the CPU and you are still blaming Windows. Classic.',
+    'Your CPU is not busy, it is drowning, and you just threw another tab in the water.',
+    'At 80% CPU, your PC is basically running a marathon while you sit and watch it suffer.',
+    'Close that one process. You know which one. The one using 60% for no reason.',
+    'CPU usage is high, your code is slow, and somehow both are somehow your fault.',
+    'This processor did not sign up to render, compile, stream, and update all at once.',
+    'Your CPU is throttling and your patience is throttling faster.',
+    'Is this multitasking or are you just torturing silicon for fun?',
+    'CPU at 80% is not performance, it is a cry for help in binary.',
+    'You just opened another heavy app and the CPU just quietly updated its will.',
+    'Your fan is loud because your CPU is screaming, and you are ignoring both.',
+    'This PC is not lagging, it is just contemplating its life choices at 80% load.',
+    'CPU is at 80%, temperature is rising, and you are still saying just one more thing.',
+    'Your processor has more threads than you have thoughts today, and all of them are busy.',
+    'At this rate, your CPU will retire before you do.',
+    'CPU usage is high, RAM is full, and you are still opening a game. Bold. Reckless, but bold.',
+]
+
+_TEMP_STATS = [
+    'Temperature just crossed 50 degrees and your PC is now legally a cooking appliance.',
+    'Is this a laptop or a frying pan with a keyboard attached?',
+    'Your CPU is so hot it could fry an egg, and you are still using it as a lap warmer. Bold choice.',
+    'At 50 degrees, your PC is not warm, it is just one bad decision away from thermal shutdown.',
+    'Your fan is working overtime and your PC is still hot. That is not cooling, that is denial.',
+    'Temperature is rising, performance is falling, and you are acting like this is fine. It is not fine.',
+    'This PC is not overheating, it is just passionately expressing its feelings in Celsius.',
+    'You could cook noodles on this keyboard right now, and honestly, that might be its best use today.',
+    'At 50 degrees, your laptop is basically a portable heater that also crashes sometimes.',
+    'Your CPU is hot because you treat it like it has no feelings. It does, and they are burning.',
+    'Temperature just hit 50 and your PC just started throttling like it is trying to survive, not perform.',
+    'Is this a computer or a sauna for silicon?',
+    'Your laptop is so hot, even the table underneath it is asking for a break.',
+    'At this temperature, your PC is not running, it is slowly melting with dignity.',
+    'You just ignored the temperature warning and opened another game. Thermal paste just cried.',
+    'This is fine. Everything is fine. The pet is on fire, the CPU is on fire, and you are still typing.',
+    'Temperature is up, fan is loud, and you are still wondering why everything is lagging. Really?',
+    'Your PC is hot enough to be a hand warmer in winter, and a fire hazard in summer.',
+    'At 50 degrees, your CPU is not working, it is just surviving your decisions.',
+    'If this laptop gets any hotter, it will start its own weather system. Congratulations.',
+]
+
+STATS_TRIGGERS = {
+    "ram": {"pool": _RAM_STATS, "mascot": "system-monitoring-dashboard.png"},
+    "cpu": {"pool": _CPU_STATS, "mascot": "processing-logic-symbols.png"},
+    "temp": {"pool": _TEMP_STATS, "mascot": "fine-under-pressure.png"},
+}
+RAM_THRESHOLD = 75
+CPU_THRESHOLD = 80
+TEMP_THRESHOLD_C = 50
+STATS_COOLDOWN_S = 300
 
 UNKNOWN_LINES = [
     "What is this place?",
@@ -899,11 +976,7 @@ KNOWN_APPS = set(APP_QUESTIONS.keys())
 
 MUSIC_PROCS = {"spotify.exe", "music.exe", "wmplayer.exe", "groove.exe"}
 
-# Idle fidgets — after 10 min with zero interaction the pet starts doing
-# its own little things, pulled from the static mascot-pack art dropped
-# into assets/idle_extras/. Hand-written captions for the ones worth a
-# proper line; anything else just gets its filename humanized so dropping
-# new art in there works out of the box with no code changes.
+# Idle fidgets: after 10 min with no interaction, show a random pose from assets/idle_extras/.
 
 FIDGET_CAPTIONS = {
     "debugging-system-bugs": "found a bug. several bugs. it's bugs all the way down.",
@@ -1079,6 +1152,38 @@ def find_claude_desktop_shortcut():
                     best = full
     return best
 
+
+def _get_cpu_temperature_c():
+    """Best-effort CPU temperature in Celsius, or None if unavailable.
+    psutil.sensors_temperatures() does not work on Windows, so on Windows
+    this falls back to nvidia-smi (GPU temperature, only if an NVIDIA GPU
+    and nvidia-smi are present). It never raises, and never blocks for
+    long: a missing sensor simply means the temp trigger stays silent,
+    while RAM and CPU triggers keep working."""
+    if psutil is not None:
+        try:
+            temps = psutil.sensors_temperatures()
+        except Exception:
+            temps = {}
+        if temps:
+            for entries in temps.values():
+                for entry in entries:
+                    try:
+                        if entry.current is not None:
+                            return float(entry.current)
+                    except Exception:
+                        continue
+    try:
+        out = subprocess.run(
+            ["nvidia-smi", "--query-gpu=temperature.gpu", "--format=csv,noheader"],
+            capture_output=True, text=True, timeout=2,
+        ).stdout.strip()
+        if out:
+            return float(out.splitlines()[0].strip())
+    except Exception:
+        pass
+    return None
+
 # Speech bubble
 
 class SpeechBubble(QWidget):
@@ -1180,7 +1285,6 @@ class PetWidget(QWidget):
         self._terminal_proc = None
         self._allow_close = False  # only the shutdown hook sets this True
 
-        # idle-fidget bookkeeping
         self._last_interaction = time.time()
         self._fidgeting = False
         self._last_fidget_time = 0.0
@@ -1196,12 +1300,10 @@ class PetWidget(QWidget):
         self.anim_timer.timeout.connect(self._tick_animation)
         self.anim_timer.start(90)
 
-        # joke/question timer (every 30s)
         self.joke_timer = QTimer(self)
         self.joke_timer.timeout.connect(self._random_joke_or_question)
         self.joke_timer.start(30_000)
 
-        # app watcher
         self.app_timer = QTimer(self)
         self.app_timer.timeout.connect(self._check_foreground_app)
         self.app_timer.start(4_000)
@@ -1215,10 +1317,18 @@ class PetWidget(QWidget):
         self.fidget_timer.timeout.connect(self._maybe_fidget)
         self.fidget_timer.start(30_000)
 
-        # welcome
-        QTimer.singleShot(600, self._welcome)
+        # Stats watcher: separate timer. Prime cpu_percent() once, first call returns 0.0.
+        self._last_stats_time = {}
+        if psutil is not None:
+            try:
+                psutil.cpu_percent(interval=None)
+            except Exception:
+                pass
+        self.stats_timer = QTimer(self)
+        self.stats_timer.timeout.connect(self._maybe_stats_joke)
+        self.stats_timer.start(30_000)
 
-    # ---- persistence ----
+        QTimer.singleShot(600, self._welcome)
     def _load_position(self):
         try:
             with open(CONFIG_PATH, "r") as f:
@@ -1238,8 +1348,6 @@ class PetWidget(QWidget):
                 json.dump({"x": self.x(), "y": self.y()}, f)
         except Exception:
             pass
-
-    # ---- animation ----
     def set_state(self, state):
         if state != self.state:
             self.state = state
@@ -1288,8 +1396,6 @@ class PetWidget(QWidget):
 
     def say(self, text, duration_ms=4500):
         self.bubble.show_text(text, self._anchor_point(), duration_ms)
-
-    # ---- welcome / bye ----
     def _welcome(self):
         self.set_state("welcome")
         self.say("welcome back! let's build something today ✨")
@@ -1298,8 +1404,6 @@ class PetWidget(QWidget):
     def say_bye_and_allow_close(self):
         self.set_state("talk")
         self.say(random.choice(["see you soon!", "bye bro!", "see ya later!"]), duration_ms=2500)
-
-    # ---- foreground app watch ----
     def _check_foreground_app(self):
         if self._dragging or self._launch_stage is not None:
             return
@@ -1352,8 +1456,6 @@ class PetWidget(QWidget):
         elif self._last_terminal in TERMINAL_QUESTIONS:
             pool += TERMINAL_QUESTIONS[self._last_terminal]
         self.say(random.choice(pool), duration_ms=5000)
-
-    # ---- idle fidgets (no touch for 10+ minutes) ----
     def _mark_interaction(self):
         self._last_interaction = time.time()
 
@@ -1389,8 +1491,54 @@ class PetWidget(QWidget):
     def _end_fidget(self):
         self._fidgeting = False
         self._apply_frame()
+    def _maybe_stats_joke(self):
+        # Do not override a drag, launch, or fidget in progress.
+        if self._dragging or self._launch_stage is not None or self._fidgeting:
+            return
+        if psutil is None:
+            return
+        now = time.time()
+        fired = []
+        try:
+            ram_pct = psutil.virtual_memory().percent
+        except Exception:
+            ram_pct = 0
+        try:
+            cpu_pct = psutil.cpu_percent(interval=None)
+        except Exception:
+            cpu_pct = 0
+        temp_c = _get_cpu_temperature_c()
+        candidates = []
+        if ram_pct >= RAM_THRESHOLD:
+            candidates.append("ram")
+        if cpu_pct >= CPU_THRESHOLD:
+            candidates.append("cpu")
+        if temp_c is not None and temp_c >= TEMP_THRESHOLD_C:
+            candidates.append("temp")
+        # Per-trigger cooldown, so a hot/full PC does not spam.
+        candidates = [
+            c for c in candidates
+            if now - self._last_stats_time.get(c, 0) >= STATS_COOLDOWN_S
+        ]
+        if not candidates:
+            return
+        trigger = random.choice(candidates)
+        self._last_stats_time[trigger] = now
+        info = STATS_TRIGGERS[trigger]
+        self._do_stats_joke(info["mascot"], random.choice(info["pool"]))
 
-    # ---- click-to-launch-claude ----
+    def _do_stats_joke(self, mascot_file, joke):
+        # Show the trigger's mascot from assets/idle_extras/ for 5 seconds.
+        path = os.path.join(IDLE_EXTRAS_DIR, mascot_file)
+        pix = QPixmap(path)
+        if pix.isNull():
+            self.say(joke, duration_ms=5000)
+            return
+        pix = pix.scaled(SPRITE_SIZE, SPRITE_SIZE, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self._fidgeting = True
+        self.label.setPixmap(pix)
+        self.say(joke, duration_ms=5000)
+        QTimer.singleShot(5000, self._end_fidget)
     def _start_claude_launch(self):
         if self._launch_stage is not None:
             return
@@ -1442,8 +1590,6 @@ class PetWidget(QWidget):
             self.say("LETS CODE \U0001F4BB\U0001F525", duration_ms=3500)
             QTimer.singleShot(3500, lambda: self.set_state("idle"))
             self._launch_stage = None
-
-    # ---- mouse / drag ----
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
             self._mark_interaction()
