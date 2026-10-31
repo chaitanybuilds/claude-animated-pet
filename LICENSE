@@ -1,3 +1,11 @@
+Scope note (2026-10-31): This MIT license applies ONLY to the original
+code and documentation in this repository (for example: src/, gen_sprites*.py,
+install.bat, run_pet.bat, requirements.txt, and README.md). It does NOT apply
+to the artwork in assets/ (assets/frames/ and assets/idle_extras/), which is
+third-party illustration art from GetIllustrations, used under its Free
+License. For the artwork rules, see ASSETS-LICENSE.md in this repository.
+The MIT text below is unchanged.
+
 MIT License
 
 Copyright (c) 2026 Chaitany (@chaitanybuilds)
