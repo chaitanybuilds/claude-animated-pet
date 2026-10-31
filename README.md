@@ -134,7 +134,8 @@ rendering, dragging and timers will run.
 ## Credits
 
 Mascot artwork adapted from a third-party Claude Mascot Pack illustration
-pack. That art has its own license terms from its creator, separate from
+pack: [Claude Mascot Pack](https://getillustrations.com/illustration-pack/claude-mascot-pack).
+That art has its own license terms from its creator, separate from
 this repo's code — check the pack's source page before redistributing the
 `assets/` images themselves beyond personal use. Everything in `src/`,
 `gen_sprites*.py`, and the installer scripts is original and covered by the
