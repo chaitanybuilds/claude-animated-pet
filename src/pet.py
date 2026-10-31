@@ -8,8 +8,10 @@ Windows-focused PyQt5 app:
  - watches the foreground process, reacts per-app with a 50-line pool of
    random questions you're not expected to answer ("what is this place?"
    for unknown apps, vibes to music)
- - click => resolves the Claude Desktop app's Start Menu shortcut (never a
-   hardcoded exe path) and launches it directly, no terminal involved
+ - click => opens a terminal and runs `claude` (the old CLI launch),
+   then closes that terminal once Claude is found or after 25s
+ - Alt+F4 / window close is ignored on purpose, so the pet stays alive
+   until shutdown, when it can show its bye bubble for 1.8s
  - every 30s: random coding joke/question (incl. dev-level dark humor) in
    a speech bubble
  - drag => one of 15 random lines ; drop => another 15
@@ -729,6 +731,8 @@ class PetWidget(QWidget):
         self._drag_pos = None
         self._dragging = False
         self._launch_stage = None  # None, 'launching', 'waiting_claude'
+        self._terminal_proc = None
+        self._allow_close = False  # only the shutdown hook sets this True
 
         # idle-fidget bookkeeping
         self._last_interaction = time.time()
@@ -846,7 +850,7 @@ class PetWidget(QWidget):
 
     def say_bye_and_allow_close(self):
         self.set_state("talk")
-        self.say("bye, see you later \U0001F44B", duration_ms=2500)
+        self.say(random.choice(["see you soon!", "bye bro!", "see ya later!"]), duration_ms=2500)
 
     # ---- foreground app watch ----
     def _check_foreground_app(self):
@@ -928,35 +932,22 @@ class PetWidget(QWidget):
     def _start_claude_launch(self):
         if self._launch_stage is not None:
             return
-        self._launch_stage = "launching"
+        self._launch_stage = "terminal_open"
         self.set_state("click")
-        self.say("opening claude desktop...", duration_ms=2500)
-
-        launched = False
-        if IS_WINDOWS:
-            shortcut = find_claude_desktop_shortcut()
-            if shortcut:
-                try:
-                    os.startfile(shortcut)
-                    launched = True
-                except Exception:
-                    launched = False
-        else:
-            try:
-                subprocess.Popen(["claude"])
-                launched = True
-            except Exception:
-                launched = False
-
-        if not launched:
-            self.say(
-                "couldn't find Claude Desktop on the Start Menu — pin it there "
-                "and I'll find it next time \U0001F614",
-                duration_ms=4000,
-            )
-            self._launch_stage = None
-            return
-
+        self.say("launching claude for you...", duration_ms=3000)
+        try:
+            if IS_WINDOWS:
+                # open a terminal and type claude (old CLI launch)
+                self._terminal_proc = subprocess.Popen(
+                    ["cmd.exe", "/K", "claude"],
+                    creationflags=subprocess.CREATE_NEW_CONSOLE,
+                )
+            else:
+                self._terminal_proc = subprocess.Popen(
+                    ["x-terminal-emulator", "-e", "bash -c 'claude; exec bash'"]
+                )
+        except Exception:
+            self._terminal_proc = None
         self._launch_stage = "waiting_claude"
         self._claude_wait_elapsed = 0
         self._claude_wait_timer = QTimer(self)
@@ -978,6 +969,13 @@ class PetWidget(QWidget):
         timed_out = self._claude_wait_elapsed > 25_000
         if found or timed_out:
             self._claude_wait_timer.stop()
+            # close the terminal we opened
+            if getattr(self, "_terminal_proc", None) is not None:
+                try:
+                    self._terminal_proc.terminate()
+                except Exception:
+                    pass
+                self._terminal_proc = None
             self.set_state("click")
             self.say("LETS CODE \U0001F4BB\U0001F525", duration_ms=3500)
             QTimer.singleShot(3500, lambda: self.set_state("idle"))
@@ -1025,8 +1023,16 @@ class PetWidget(QWidget):
             event.accept()
 
     def closeEvent(self, event):
-        self._save_position()
-        event.accept()
+        # Alt+F4 / window X must not kill the pet, otherwise it would not
+        # be alive at shutdown to show the bye bubble for 1.8s.
+        # Only the shutdown hook sets _allow_close = True, when it releases
+        # its shutdown block. To quit manually, end the task in Task Manager.
+        if getattr(self, "_allow_close", False):
+            self._save_position()
+            event.accept()
+        else:
+            event.ignore()
+            self.say("nope, I'm staying here!", duration_ms=2000)
 
 # Windows shutdown/logoff hook
 
@@ -1061,15 +1067,24 @@ def install_shutdown_hook(app, pet):
     )
 
     def wnd_proc(hWnd, msg, wParam, lParam):
+        if msg == WM_ENDSESSION:
+            pet._allow_close = True
+            return ctypes.windll.user32.CallWindowProcW(old_wndproc, hWnd, msg, wParam, lParam)
         if msg == WM_QUERYENDSESSION:
             if not getattr(pet, "_bye_shown", False):
                 pet._bye_shown = True
                 pet.say_bye_and_allow_close()
                 QTimer.singleShot(1800, lambda: _release_block(hwnd))
-            return 0  # block briefly so the bubble is visible
+                return 0  # block briefly so the bubble is visible
+            # Bye already shown and block released: let Windows close us.
+            return ctypes.windll.user32.CallWindowProcW(old_wndproc, hWnd, msg, wParam, lParam)
         return ctypes.windll.user32.CallWindowProcW(old_wndproc, hWnd, msg, wParam, lParam)
 
     def _release_block(hwnd_):
+        try:
+            pet._allow_close = True
+        except Exception:
+            pass
         try:
             user32.ShutdownBlockReasonDestroy(hwnd_)
         except Exception:
