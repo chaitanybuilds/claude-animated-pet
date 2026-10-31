@@ -8,6 +8,9 @@ Windows-focused PyQt5 app:
  - watches the foreground process, reacts per-app with a 50-line pool of
    random questions you're not expected to answer ("what is this place?"
    for unknown apps, vibes to music)
+ - watches terminals too: PowerShell, cmd, Git, Node, Python, Windows
+   Terminal and WSL each get their own 50-line pool of English, sarcastic,
+   dark/funny terminal jokes
  - click => opens a terminal and runs `claude` (the old CLI launch),
    then closes that terminal once Claude is found or after 25s
  - Alt+F4 / window close is ignored on purpose, so the pet stays alive
@@ -431,6 +434,424 @@ APP_QUESTIONS = {
     ),
 }
 
+
+
+# Terminal pools — 50 hand-written lines each, in English, sarcastic
+# dark/funny in the same style as the other app pools. No template filler
+# here: every line is specific to its terminal, so switching from
+# PowerShell to Git Bash actually changes what the pet says.
+_POWERSHELL_POOL = [
+    'Is this a script or a ransom note written in Verb-Noun?',
+    'Be honest, did you Google that cmdlet or just guess Get-Something until it worked?',
+    '$Error is not a variable, it is a lifestyle at this point.',
+    'ExecutionPolicy says Restricted, you say run anyway. Security team says hi.',
+    'Another pipeline with twelve stages? That is not scripting, that is plumbing with extra steps.',
+    'Did you just pipe everything to Out-Null and call it error handling?',
+    'PowerShell ISE is still open? That is not nostalgia, that is a cry for help.',
+    'Your .ps1 is eight hundred lines and the comment at the top says quick script.',
+    'Is this admin PowerShell or are we just living dangerously with UAC off?',
+    'How many times have you typed Get-Help and still not read it?',
+    'That blue background is not productivity, it is a confession.',
+    'You renamed a variable $x, $y, $z and now even you do not know what $z holds.',
+    'Is this automation or are you just automating your own mistakes faster?',
+    'Did the script work, or did it just fail silently and you moved on?',
+    'Another one-liner that is four hundred characters long. Sure, one line.',
+    'Are we in pwsh 7 or PowerShell 5? The answer determines how much will break.',
+    'You used -Force on everything. That is not confidence, that is despair.',
+    'Is this a remote session or are you just SSHing into your own problems?',
+    'That function returns nothing, throws nothing, and yet somehow broke production.',
+    'Be honest, how much of this script is copied from a blog post from 2014?',
+    'Your profile.ps1 loads slower than your motivation on a Monday.',
+    'Did you just run a script you found in a forum with trust me bro in the comments?',
+    'This is not DevOps, this is a guy with a blue window and a deadline.',
+    'The pipeline broke at stage nine. Of course it did. Stage nine is where hope goes to die.',
+    'You set ExecutionPolicy to Unrestricted and called it fixing the issue.',
+    'Is that a real error or just PowerShell being passive-aggressive in red text?',
+    'Another day, another object that is not actually an object, it is a string pretending.',
+    'Your script has more Write-Host than actual logic. That is not logging, that is diary writing.',
+    'Did you test this in prod? No, you tested this on prod.',
+    'That cmdlet name is so long you need a second monitor just to read it.',
+    'Are you automating this task or just procrastinating with extra steps and a blue theme?',
+    'The job ran, the output is empty, and you are calling that success.',
+    'You piped Get-Process to Stop-Process. Bold. Reckless, but bold.',
+    'Is this a scheduled task or a time bomb with a calendar invite?',
+    'Your error handling is try, do stuff, catch, ignore. Classic.',
+    'How many modules did you import for a script that prints one line?',
+    'That $null comparison just failed because you compared the wrong side. Again.',
+    'PowerShell remoting: because breaking one machine was not enough.',
+    'You wrote a script to automate a task you do once a year. Efficiency, sort of.',
+    'Is this a function or a novel with parameters?',
+    'The terminal says completed successfully and you still do not believe it.',
+    'You used Invoke-Expression on user input. Security team just felt a disturbance.',
+    'Another alias that only you understand. Future you is already angry.',
+    'Did you just close the window without saving? The script was never saved, was it?',
+    'This is not a blue screen of death, it is a blue screen of I told you so.',
+    'Your script works on your machine. It works nowhere else. That is the whole personality now.',
+    'Are we scripting or are we just typing commands until the red text stops?',
+    'That one-liner just became a two hundred line function. Growth, I guess.',
+    'You forgot to dot-source the file and now nothing works. Again.',
+    'Is this PowerShell or a therapy session with a dollar prompt?',
+]
+
+_CMD_POOL = [
+    'Is this cmd or a museum exhibit that still runs?',
+    'You typed dir and got two hundred files. The one you needed was not in the list, classic.',
+    'Be honest, is this a batch file or a list of regrets with .bat at the end?',
+    'Another echo off at the top, as if hiding the output hides the shame.',
+    'Did you just cd into the wrong folder for the third time today?',
+    'That %PATH% variable has been edited so many times it needs therapy.',
+    'Is this a script or are you just typing commands you half-remember from 2009?',
+    'You ran del *.* and then froze. We all saw it. We all felt it.',
+    'Another pause at the end so you can pretend you meant to read the output.',
+    'Is this admin cmd or are we just hoping UAC is asleep?',
+    'Your batch file has more goto labels than actual logic. Spaghetti, but make it Windows.',
+    'Did that command work or did it just print nothing and you took that as a yes?',
+    'You are still using cmd in 2026. That is not loyalty, that is Stockholm syndrome.',
+    'Another cls to hide the evidence before anyone looks over your shoulder.',
+    'Is this a real task or are you just pinging localhost to feel productive?',
+    'That for loop in batch just ate your afternoon. Congratulations.',
+    'You typed the command, it failed, you typed it again louder. It still failed.',
+    'Be honest, how many of these commands did you copy from a forum post with no explanation?',
+    'This window has been open since the last reboot. It has seen things.',
+    'Did you just set a variable with set and forget to use setlocal? Future you is crying.',
+    'Another ipconfig /flushdns as if that fixes anything except your confidence.',
+    'Is this a build script or a prayer written in percent signs?',
+    'Your .bat file works, but nobody, including you, knows why. Do not touch it.',
+    'You ran a command as admin that you would never run as a normal user. Bold.',
+    'That error level is 1. It has always been 1. It will always be 1.',
+    'Did you just type exit and then realise you needed that window?',
+    'Another taskkill /F because closing things politely was too slow for you.',
+    'Is this cmd or a time machine to when computers were simpler and errors were vaguer?',
+    'You have three cmd windows open and no idea which one is doing what.',
+    'That command prompt title still says Administrator. Power, and also danger.',
+    'Be honest, did you just run format on the wrong drive in your head and panic for a second?',
+    'Your batch script has a comment that says do not delete this line. Nobody knows why.',
+    'Another xcopy with no switches, as if copying files was ever that simple.',
+    'Is this a quick fix or are we about to edit the registry because cmd was not enough?',
+    'You typed help and got a list longer than your patience. Classic cmd.',
+    'That ping just timed out four times and you are still staring at it like it owes you an answer.',
+    'Did you just chain commands with && and hope the first one succeeds? Optimism, sort of.',
+    'Another system32 folder, another reason to be careful and also not careful at all.',
+    'Your script deletes temp files and also, somehow, your will to live.',
+    'Is this a terminal or a black box where good intentions go to get error level 9009?',
+    'You ran sfc /scannow because someone on the internet said to. It found nothing. It always finds nothing.',
+    'That caret ^ in batch just escaped your sanity, not just the character.',
+    'Another day, another command that works only if you run it from exactly the right folder.',
+    'Did you just open cmd to run one command and end up in a two-hour rabbit hole?',
+    'Your prompt is C:\\Users\\you\\Desktop\\project\\final\\final2\\actually_final. We know what that means.',
+    'Is this cmd or a confession booth with a blinking cursor?',
+    'You closed the window and the process is still running. Of course it is.',
+    'That batch file is older than your current job and still runs the whole deployment.',
+    'Another echo hello world, as if the world needed another hello from this window.',
+    'Did you just type a command, get access denied, and pretend you did not see it?',
+]
+
+_GIT_POOL = [
+    'Is this a repo or a crime scene with a .git folder?',
+    'You just force pushed to main. The team will find out. They always find out.',
+    'Another merge conflict? That is not a bug, that is two people refusing to agree.',
+    'Did you commit with message fix or are we just documenting our denial?',
+    'Your branch name is literally fix-stuff-final-v2. Nobody believes v2 is final.',
+    'Be honest, how many stashes do you have that you will never pop again?',
+    'You rebased, it went wrong, and now history is a choose-your-own-adventure book.',
+    'Another git blame that points straight at you. Awkward.',
+    'Is this a pull request or a group therapy session with code review comments?',
+    'You committed node_modules once. Once was enough to scar everyone.',
+    'That detached HEAD state is not a bug, it is a metaphor for your career right now.',
+    'Did you just push to the wrong remote? Production says hi.',
+    'Your commit history reads like a diary: wip, wip, wip, actually fix, revert wip.',
+    'Another cherry-pick that brought three new bugs as a bonus.',
+    'Is this a feature branch or a branch you started in 2023 and forgot to delete?',
+    'You resolved a conflict by deleting both versions. Bold. Terrifying, but bold.',
+    'That .gitignore file ignores everything except your mistakes. Those are committed.',
+    'Did you just amend a commit that was already pushed? The timeline is now broken.',
+    'Your git log is longer than your patience and shorter than your excuses.',
+    'Another rebase interactive where you squashed your dignity along with the commits.',
+    'Is this a submodule or a nested doll of pain?',
+    'You cloned a repo just to read the README and now you have 400 MB of regret.',
+    'That merge just created a conflict in a file you have never even opened.',
+    'Be honest, did you just git add . without checking what . actually contains?',
+    'Your remote is called origin, your confidence is called gone.',
+    'Another branch with no upstream set, floating in the void like your weekend plans.',
+    'Did you just reset --hard and lose three hours of work? Yes. Yes you did.',
+    'That tag is v1.0.0-final-real-this-time. Sure it is.',
+    'Is this a hotfix or are we just hot-gluing production back together?',
+    'You wrote a commit message that says minor changes and changed 47 files.',
+    'Another pull that fast-forwarded your code and your anxiety at the same time.',
+    'Your stash message is just asdf. Future you will love that.',
+    'Did you just open a PR with no description? Reviewers can smell fear.',
+    'That conflict marker <<<<<<< is still in the file. It has been there since Tuesday.',
+    'Is this a monorepo or a black hole where good code goes to get lost?',
+    'You forked a repo, changed one line, and called it a contribution. Respect, sort of.',
+    'Another git bisect to find the commit that broke everything. Spoiler: it was yours.',
+    'Your branch just diverged by 128 commits. That is not divergence, that is a breakup.',
+    'Did you just delete a branch that had the only working version? Of course you did.',
+    'That pre-commit hook just blocked your commit for linting. The linter is not wrong, you are.',
+    'Is this a release or are we just tagging our trauma?',
+    'You committed a .env file once and now security is in your DMs.',
+    'Another git status that shows 200 modified files and you modified exactly one on purpose.',
+    'Your commit just broke CI and CI is the only honest friend you have left.',
+    'Did you just say let me just quickly rebase? Nothing quick has ever followed those words.',
+    'That repository has more branches than your project has users.',
+    'Is this git or a horror story told in commit messages?',
+    'You pushed, the build failed, and you pretended you did not see the red X.',
+    'Another day, another merge conflict in a file that is just a list of names.',
+    'Your git history will be studied by future developers as a warning, not a guide.',
+]
+
+_NODE_POOL = [
+    'Is this Node or a support group for people who installed one package too many?',
+    'Your node_modules folder is bigger than your entire operating system. Congratulations.',
+    'Be honest, did you npm install something just to print hello world?',
+    'Another package.json with 47 dependencies and zero idea what half of them do.',
+    'Did you just run npm install and watch your disk space disappear in real time?',
+    'That callback hell is not code, it is a descent into madness with extra indentation.',
+    'You updated one package and now everything is broken. Dependency roulette, again.',
+    'Is this a server or a process that crashes when you look at it wrong?',
+    'Another unhandled promise rejection. The promise was that this would work.',
+    'Your code uses async/await and still somehow blocks everything. Impressive, in a bad way.',
+    'Did you just console.log your way through a bug instead of actually debugging it? Respect.',
+    'That version mismatch between Node 18 and Node 20 just ended your afternoon.',
+    'Is this an API or a list of endpoints that return 500 with confidence?',
+    'You installed a package to left-pad a string. The internet has not forgiven you yet.',
+    'Another node_modules that you deleted and reinstalled, as if that was ever the fix.',
+    'Your server just crashed because of an uncaught exception in a file you forgot existed.',
+    'Be honest, how many of these dependencies are just dependencies of dependencies?',
+    'That event loop is blocked and so is your weekend.',
+    'Did you just run node app.js and hope? Hope is not a runtime strategy.',
+    'Another .env file that is not actually loaded, so production is using defaults. Fun.',
+    'Is this JavaScript or a language where == and === are two different kinds of betrayal?',
+    'You used var in 2026. That is not retro, that is a cry for help.',
+    'That npm audit just reported 900 vulnerabilities and you are ignoring all of them.',
+    'Did you just copy a Stack Overflow snippet that uses eval? Security just left the chat.',
+    'Your package-lock.json just changed by itself and now nobody trusts the build.',
+    'Another port already in use error. Something else is running on 3000, probably your past self.',
+    'Is this a microservice or a monolith with extra steps and a README that lies?',
+    'You restarted the server and it worked. Nobody knows why. Do not touch it.',
+    'That memory leak is not a bug, it is a feature that slowly consumes your RAM and your soul.',
+    'Be honest, did you just use setTimeout to fix a race condition? Yes, you did.',
+    'Your code has a comment that says TODO: fix this later. Later was three years ago.',
+    'Another JSON.parse that just threw because the API returned HTML instead of JSON. Classic.',
+    'Did you just require a file with a relative path that only works on your machine?',
+    'That Express route just returned Cannot GET / and you are acting surprised.',
+    'Is this Node or a therapy session where the therapist is also a JavaScript runtime?',
+    'You installed TypeScript to avoid bugs and now you have TypeScript bugs instead.',
+    'Another day, another node process that will not die even after you killed it twice.',
+    'Your code uses Promise.all and one rejection just ruined all of them. Teamwork.',
+    'Did you just run npm run dev and watch it fail because of a missing script? Classic.',
+    'That error stack trace is longer than the actual code. It has its own lore now.',
+    'Is this a REPL or are you just typing JavaScript into a terminal to feel something?',
+    'You used a global variable to share state. The state is now shared with your regret.',
+    'Another dependency just got deprecated and its maintainer just gave up. Same.',
+    'Your server logs are just console.log spam with no timestamps. Archaeology, not debugging.',
+    'Did you just deploy to production on a Friday? The on-call phone just started ringing.',
+    'That callback just called back twice and now your database has duplicate everything.',
+    'Is this Node or a machine that turns coffee into unhandled exceptions?',
+    'You wrote a one-line script and it needs 200 MB of dependencies to run. Efficiency.',
+    'Another npm install -g that just polluted your global environment forever.',
+    'Your code works, but only if you run it with --experimental-something. Stable, sure.',
+]
+
+_PYTHON_POOL = [
+    'Is this Python or a therapy session with indentation as the therapist?',
+    'You got an IndentationError again. The code looked fine. It was not fine.',
+    'Be honest, did you just pip install something without a virtualenv? Global Python is crying.',
+    'Another venv that you forgot to activate, so you installed everything globally. Classic.',
+    'Did you just use a mutable default argument and wonder why the list keeps growing?',
+    'Your code has a variable named data, data2, and final_data. None of them are final.',
+    'Is this a script or a Jupyter notebook that you converted to .py and hoped for the best?',
+    'That traceback is longer than your code and it ends with a typo you made at 2am.',
+    'You used == to compare two lists and got False. They looked identical. They were not.',
+    'Another print debugging session, because breakpoints are for people with patience.',
+    'Did you just import * and now you have no idea where that function came from?',
+    'Your requirements.txt has no versions pinned. The build will break next week, guaranteed.',
+    'Is this Python 2 or Python 3? The print statement just answered that for you, badly.',
+    'You wrote a one-liner list comprehension that nobody, including you, can read.',
+    'That RecursionError just happened because your base case was more of a suggestion.',
+    'Be honest, how many of these imports are actually used? Half of them are just decoration.',
+    'Your code just threw a TypeError because you added a string to an int. Again.',
+    'Another virtualenv named venv, venv2, venv_final, venv_final2. We know what that means.',
+    'Did you just run python instead of python3 and wonder why nothing works?',
+    'That dictionary just lost a key and you are acting like it was never there.',
+    'Is this a class or a collection of functions pretending to be object-oriented?',
+    'You used global inside a function. The function works. Your architecture does not.',
+    'Another f-string that just printed {variable} literally because you forgot the f.',
+    'Your code has a comment that says hack, do not touch. Everyone will touch it.',
+    'Did you just catch all exceptions with except: pass? The bug is now invisible, not fixed.',
+    'That pip install just took ten minutes and installed a package you will use once.',
+    'Is this a script or a list of TODOs that you will never actually do?',
+    'You used os.system instead of subprocess. Security just felt a disturbance.',
+    'Another NameError because you defined the variable after you used it. Time travel, sort of.',
+    'Your code works on your machine because your machine has that one package nobody else has.',
+    'Be honest, did you just copy a snippet that uses eval on user input? Bold. Reckless.',
+    'That loop just ran forever because you forgot to increment the counter. Classic.',
+    'Did you just use time.sleep to fix a race condition? Sleep is not a fix, it is a nap.',
+    'Your function returns None and you are surprised the result is None. It always was.',
+    'Is this Python or a language where whitespace is both the syntax and the enemy?',
+    'You just used a lambda for something that deserved a real function and a real name.',
+    'Another ModuleNotFoundError because the module is in a folder Python refuses to see.',
+    'Your code has more try/except blocks than actual logic. Confidence, sort of.',
+    'Did you just run a script that deletes files and hope the path was correct? It was not.',
+    'That list just mutated while you were iterating over it. Python warned you. You ignored it.',
+    'Is this a REPL or are you just typing Python into a terminal to avoid writing a real file?',
+    'You used pickle to load data from the internet. That is not loading, that is trusting strangers.',
+    'Another day, another dependency conflict where pip just gives up and you give up too.',
+    'Your code just passed all tests because the tests are empty. Victory, sort of.',
+    'Did you just use == True instead of just checking the value? We all saw it.',
+    'That generator just got exhausted and you are wondering where your data went.',
+    'Is this Python or a confession booth with a >>> prompt?',
+    'You wrote a script to automate a task and now maintaining the script is the task.',
+    'Another import that just shadowed a standard library module. Chaos, but make it Pythonic.',
+    'Your code is PEP8 compliant and still completely unreadable. Impressive.',
+]
+
+_TERMINAL_POOL = [
+    'Is this Windows Terminal or a tab hoarder support group?',
+    'You have seven tabs open and no idea which one is actually doing something.',
+    'Be honest, did you just split a pane to feel productive while doing nothing?',
+    'Another JSON settings file that you edited by hand and immediately broke.',
+    'Did you just change the colour scheme instead of fixing the actual problem? Classic.',
+    'Your terminal has more profiles than you have actual projects.',
+    'Is this a terminal or a collection of shells pretending to be one app?',
+    'You set the default profile to something you do not even use. Bold.',
+    'Another tab that says PowerShell, cmd, and WSL all at once. Identity crisis, sort of.',
+    'Did you just close the wrong tab and lose the one command that was working?',
+    'Your settings.json is 400 lines long and the comment at the top says keep it simple.',
+    'Is this a new tab or are you just opening the same shell for the fifth time today?',
+    'You changed the font to something fancy and now nothing is readable. Aesthetic, though.',
+    'Another pane split that just made everything smaller and your patience thinner.',
+    'Be honest, how many of these tabs are just sitting there, doing nothing, judging you?',
+    'Your terminal just crashed and took all seven tabs with it. No warning, no mercy.',
+    'Did you just paste a command into the wrong pane? The other shell just ran it. Fun.',
+    'That acrylic blur looks nice and also makes your eyes hurt after an hour.',
+    'Is this Windows Terminal or a window manager that you use to avoid actual work?',
+    'You spent an hour customising the prompt and zero minutes using it productively.',
+    'Another profile that you created, used once, and forgot exists.',
+    'Your terminal history is just the same five commands, in different orders, forever.',
+    'Did you just set the background image to something distracting and call it motivation?',
+    'That tab title still says Windows PowerShell even though you are in WSL. Confusing, sort of.',
+    'Is this a terminal or a tab bar that is slowly becoming your to-do list?',
+    'You just used Ctrl+Shift+T to reopen a tab you closed on purpose. Regret, instantly.',
+    'Another shortcut that you forgot, so you clicked through three menus instead.',
+    'Your terminal just updated and reset your settings. Customisation is temporary, pain is permanent.',
+    'Be honest, did you just open a new terminal because the old one had too much red text?',
+    'That pane is so small you cannot read the output, but you refuse to close it.',
+    'Is this a shell or a collection of shells that you switch between to avoid committing to one?',
+    'You just dragged a tab out into a new window and now you have two problems instead of one.',
+    'Another colour scheme named after a city you have never visited.',
+    'Your terminal font ligatures just made == look like a single character. Cute, and also confusing.',
+    'Did you just set the default shell to WSL and forget how to get back to PowerShell?',
+    'That settings file has a trailing comma and now the whole terminal refuses to start.',
+    'Is this Windows Terminal or a pretty box where your productivity goes to hide?',
+    'You have a tab for every project and you are working on none of them right now.',
+    'Another day, another terminal window that you opened, forgot, and left running overnight.',
+    'Your prompt just shows the full path and it is so long it wraps to the next line.',
+    'Did you just use the search feature in the terminal to find a command you typed five minutes ago?',
+    'That tab just froze and you are staring at it like staring will unfreeze it.',
+    'Is this a terminal or a museum of every shell you have ever tried and abandoned?',
+    'You just changed the theme to dark mode, again, as if that was the problem.',
+    'Another profile with a starting directory that no longer exists. It opens, it fails, it judges.',
+    'Your terminal just beeped and you have no idea why. It will beep again. It always does.',
+    'Did you just open Terminal to run one command and end up customising it for an hour?',
+    'That window is maximised, minimised, and also somehow still in your way.',
+    'Is this a new feature or are we just renaming the same tab bar and calling it innovation?',
+    'You just closed Terminal and all your tabs are gone. They were not saved. They never are.',
+]
+
+_WSL_POOL = [
+    'Is this WSL or a Linux machine pretending to be a Windows app?',
+    'You just typed sudo and then realised you have no idea what the password is.',
+    'Be honest, did you just apt update and then apt upgrade and then regret everything?',
+    'Another distro that you installed, used once, and forgot exists.',
+    'Did you just run a Linux command in Windows and wonder why it failed? Wrong OS, friend.',
+    'Your WSL just ate all your RAM and Windows is now asking for it back, politely.',
+    'Is this Ubuntu or a fresh install that you have already broken in three commands?',
+    'You just edited a file in Windows and WSL sees a different version. Line endings, classic.',
+    'Another permission denied because the file is owned by root and also by your past self.',
+    'Did you just chmod 777 everything to fix permissions? Security just left the chat.',
+    'Your WSL kernel just updated and now nothing that worked yesterday works today.',
+    'Is this a terminal or a bridge between two operating systems that both blame each other?',
+    'You just ran rm -rf in WSL and then remembered it can see your Windows files too.',
+    'Another day, another package that is not found because apt needs an update first.',
+    'Be honest, how many distros do you have installed just to say you use Linux?',
+    'Your WSL just froze and Windows is pretending it does not know what happened.',
+    'Did you just use wsl --shutdown to fix a problem and create three new ones?',
+    'That path /mnt/c/Users/you is so long it deserves its own postcode.',
+    'Is this Linux or a Windows feature that lets you feel superior while still using Windows?',
+    'You just installed Docker in WSL and now your disk is full. Again.',
+    'Another sudo apt install that just installed 200 dependencies for one tiny tool.',
+    'Your .bashrc just broke and now every new shell starts with an error. Welcome back.',
+    'Did you just try to run a GUI app in WSL and wonder why it looks wrong? It always looks wrong.',
+    'That kernel panic just happened in a VM that is also not really a VM. Confusing.',
+    'Is this WSL2 or WSL1? The answer determines how much of your life you will lose today.',
+    'You just mounted a Windows drive and the permissions are now a work of fiction.',
+    'Another day, another time sync issue where WSL thinks it is yesterday.',
+    'Your WSL just ran out of disk space because Docker left 50 GB of images behind.',
+    'Be honest, did you just use Linux commands in PowerShell by accident? We all saw it.',
+    'That apt package just conflicted with another apt package. Apt is now in therapy.',
+    'Did you just edit /etc/hosts and break networking for both OSes at once? Efficient.',
+    'Your WSL distro just updated and your custom config is gone. It was never saved, was it?',
+    'Is this a shell or a place where Windows and Linux argue about line endings forever?',
+    'You just ran a script that works in Linux and fails in WSL because of one path. Classic.',
+    'Another wsl --list --verbose that just shows distros you do not remember installing.',
+    'Your Linux file system is case-sensitive and your Windows brain is not. Chaos.',
+    'Did you just use grep to search a Windows folder from WSL and wait ten minutes?',
+    'That service just failed to start in WSL because systemd is not really systemd here.',
+    'Is this WSL or a science experiment where two OSes share one kernel and one grudge?',
+    'You just copied a file from Windows to WSL and the permissions changed. Of course they did.',
+    'Another day, another sudo command that you typed without thinking and then regretted.',
+    'Your WSL just needs a restart and Windows just needs a restart and you just need a break.',
+    'Did you just install a package with pip in WSL and also in Windows? Now you have two problems.',
+    'That network just stopped working in WSL because Windows updated overnight. Thanks, Windows.',
+    'Is this Linux or a Windows app that lets you run Linux commands and still blame Microsoft?',
+    'You just used vim in WSL and now you cannot exit vim. Nobody can exit vim. That is the rule.',
+    'Another distro upgrade that just broke Python, Node, and your will to continue.',
+    'Your WSL just took 30 seconds to start and you are acting like that is fast. It is not.',
+    'Did you just run a command that worked in Ubuntu and failed in Debian? Same Linux, different pain.',
+    'That WSL terminal just closed and your long-running job is gone. It was almost done. Almost.',
+]
+
+TERMINAL_QUESTIONS = {
+    "powershell": _POWERSHELL_POOL,
+    "cmd": _CMD_POOL,
+    "git": _GIT_POOL,
+    "node": _NODE_POOL,
+    "python": _PYTHON_POOL,
+    "terminal": _TERMINAL_POOL,
+    "wsl": _WSL_POOL,
+}
+
+# process name -> terminal category. bash.exe and conhost.exe are special:
+# bash.exe is WSL's launcher in System32 but Git's bash in a Git install,
+# and conhost.exe is just the console host for whatever shell is inside it,
+# so those two are resolved by exe path / parent process below, not by name.
+TERMINAL_MAP = {
+    "powershell.exe": "powershell",
+    "pwsh.exe": "powershell",
+    "cmd.exe": "cmd",
+    "git.exe": "git",
+    "git-bash.exe": "git",
+    "node.exe": "node",
+    "python.exe": "python",
+    "windowsterminal.exe": "terminal",
+    "wt.exe": "terminal",
+    "wsl.exe": "wsl",
+    "wslhost.exe": "wsl",
+}
+
+def _resolve_terminal_category(proc_name, exe_path=None, parent_name=None):
+    if proc_name == "bash.exe":
+        if exe_path and "git" in exe_path.lower():
+            return "git"
+        return "wsl"
+    if proc_name == "conhost.exe":
+        if parent_name in TERMINAL_MAP:
+            return TERMINAL_MAP[parent_name]
+        if parent_name == "bash.exe":
+            return "wsl"
+        return "cmd"
+    return TERMINAL_MAP.get(proc_name)
+
 UNKNOWN_LINES = [
     "What is this place?",
     "Umm... Never seen this one before?",
@@ -569,6 +990,31 @@ def get_foreground_process_name():
         return proc.name().lower()
     except Exception:
         return None
+
+def get_foreground_process_info():
+    """Return (process name, exe path, parent process name) for the
+    foreground window, or (None, None, None) if it cannot be determined.
+    The exe path / parent name matter for bash.exe and conhost.exe, where
+    the process name alone does not say which shell is actually running."""
+    if not IS_WINDOWS or win32gui is None or psutil is None:
+        return None, None, None
+    try:
+        hwnd = win32gui.GetForegroundWindow()
+        _, pid = win32process.GetWindowThreadProcessId(hwnd)
+        proc = psutil.Process(pid)
+        name = proc.name().lower()
+        try:
+            exe = proc.exe()
+        except Exception:
+            exe = None
+        try:
+            parent = proc.parent()
+            parent_name = parent.name().lower() if parent else None
+        except Exception:
+            parent_name = None
+        return name, exe, parent_name
+    except Exception:
+        return None, None, None
 
 def set_process_priority_extreme():
     """Push this process to the top of Windows' scheduler so the pet isn't
@@ -761,6 +1207,7 @@ class PetWidget(QWidget):
         self.app_timer.start(4_000)
         self._last_category = None
         self._last_proc = None
+        self._last_terminal = None
 
         # idle-fidget watcher — checked every 30s, only actually fires once
         # IDLE_FIDGET_AFTER_MS of zero interaction has passed
@@ -856,26 +1303,39 @@ class PetWidget(QWidget):
     def _check_foreground_app(self):
         if self._dragging or self._launch_stage is not None:
             return
-        proc = get_foreground_process_name()
+        proc, exe_path, parent_name = get_foreground_process_info()
         if proc is None:
             return
         if proc == self._last_proc:
             return
         self._last_proc = proc
+        terminal = _resolve_terminal_category(proc, exe_path, parent_name)
 
         if proc in MUSIC_PROCS:
+            self._last_terminal = None
             self.set_state("vibe")
             self.say("nice track, vibing with you \U0001F3B6")
             return
 
         if proc in KNOWN_APPS:
+            self._last_terminal = None
             self.set_state("talk")
             self.say(random.choice(APP_QUESTIONS[proc]))
             return
 
+        if terminal in TERMINAL_QUESTIONS:
+            self._last_terminal = terminal
+            self.set_state("talk")
+            self.say(random.choice(TERMINAL_QUESTIONS[terminal]))
+            return
+
         # unknown app -> confused line, but not spammy for Explorer/system procs
+        # Note: python.exe is NOT ignored here any more — it is a terminal
+        # category above. pythonw.exe stays ignored because that is how the
+        # pet itself runs, so the pet must not react to its own process.
+        self._last_terminal = None
         if proc in ("explorer.exe", "dwm.exe", "searchhost.exe", "shellexperiencehost.exe",
-                    "claudeanimatedpet.exe", "python.exe", "pythonw.exe"):
+                    "claudeanimatedpet.exe", "pythonw.exe"):
             return
         self.set_state("confused")
         self.say(random.choice(UNKNOWN_LINES))
@@ -889,6 +1349,8 @@ class PetWidget(QWidget):
         pool = CODING_JOKES[:]
         if proc in KNOWN_APPS:
             pool += APP_QUESTIONS[proc]
+        elif self._last_terminal in TERMINAL_QUESTIONS:
+            pool += TERMINAL_QUESTIONS[self._last_terminal]
         self.say(random.choice(pool), duration_ms=5000)
 
     # ---- idle fidgets (no touch for 10+ minutes) ----
