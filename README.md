@@ -16,7 +16,7 @@ Built by [@chaitanybuilds](https://github.com/chaitanybuilds). Shared free of ch
 - Launches fast at login. The installer registers a Scheduled Task (`ClaudeAnimatedPet`, runs at logon, highest run level) instead of a Startup-folder shortcut, so it does not hit Windows' 10-15 second startup delay. It also bumps its own process priority on launch.
 - Reacts to the app in front of you, checked every 4 seconds. Each known app gets its own 50-line pool of random one-liners, in English, sarcastic and dark/funny. You are not expected to answer, it is just commentary.
   - Discord, Chrome, VS Code, Claude, Steam, Unity, Unity Hub
-  - Any app it does not recognise gets a confused line. Music apps switch it to a bouncier "vibing" animation.
+  - Any app it does not recognise gets one of 3 confused lines. Music apps (Spotify, Windows Media Player, Groove, Music) switch it to a bouncier "vibing" animation with the fixed line "nice track, vibing with you 🎶".
 - Reacts to terminals too, each with its own 50-line pool, also English, sarcastic and dark/funny:
   - PowerShell (`powershell.exe`, `pwsh.exe`)
   - cmd (`cmd.exe`, `conhost.exe`)
@@ -33,7 +33,7 @@ Built by [@chaitanybuilds](https://github.com/chaitanybuilds). Shared free of ch
   - Each trigger has a 5-minute cooldown, and if several fire at once only one is picked, so it does not spam. Temperature is best-effort on Windows: `psutil` does not report it there, so the code falls back to `nvidia-smi` if present, otherwise that trigger stays silent while RAM and CPU keep working.
 - Tells a random coding joke every 30 seconds. If the foreground app is a known app or terminal, that app's pool is added to the joke pool for that round.
 - Click it and it opens a terminal and runs the `claude` CLI, then closes that terminal once Claude is found or after 25 seconds. The pet says "launching claude for you..." first, then "LETS CODE 💻🔥".
-- Drag it anywhere for a random drag line, drop it for a random drop line. It remembers where you left it, every reboot.
+- Drag it anywhere for a random drag line (15 in the pool), drop it for a random drop line (15 in the pool). It remembers where you left it, every reboot.
 - Goes quiet for 10 minutes, then starts doing its own thing. If nobody has touched it for 10 minutes, it fires a random idle pose from `assets/idle_extras/` every 45-110 seconds, each with its own caption, until you interact again.
 - Pixel-art animation built from static source art with transforms (bob, sway, squash/stretch, rotate). The frame loop ping-pongs instead of snapping back to frame 0, with a subtle sine-wave bob on top.
 - Alt+F4 and window close are ignored on purpose, so the pet stays alive until shutdown. To quit manually, end the task in Task Manager.
@@ -78,7 +78,9 @@ claude-animated-pet/
 ├── install.bat                # one-time setup + autostart registration
 ├── run_pet.bat                # manual launch
 ├── requirements.txt
+├── LICENSE                    # MIT, code/docs only, NOT assets/
 ├── ASSETS-LICENSE.md          # artwork license (assets/ is NOT MIT)
+├── .gitignore                 # __pycache__/, *.pyc, pet_config.json, .vscode/, .idea/
 └── pet_config.json            # auto-created; remembers screen position
 ```
 
