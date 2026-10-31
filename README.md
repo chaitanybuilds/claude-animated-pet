@@ -62,14 +62,20 @@ installed and on your `PATH` (check "Add python.exe to PATH" during setup).
    wherever.
 
 2. Run the installer. Double-click `install.bat` inside that folder.
+   The installer will ask for administrator rights once (a Windows
+   permission prompt - click Yes). That is required because the fast
+   logon task is registered at the highest run level, and Windows
+   refuses that registration from a normal process with
+   "Access is denied". If you click No, the installer exits without
+   registering anything.
    This will:
    - `pip install` the dependencies (PyQt5, psutil, pywin32)
    - register a Scheduled Task (`ClaudeAnimatedPet`, runs at logon, highest
      run level) so the pet launches automatically, with no console window
      and without the ~10s delay Windows adds to classic Startup-folder
-     apps, every time you log in. If Task Scheduler registration fails for
-     some reason, it falls back to a silent Startup-folder shortcut
-     instead.
+     apps, every time you log in. Only if Task Scheduler registration
+     still fails for another reason does it fall back to a silent
+     Startup-folder shortcut instead (which launches about 10-15s late).
 
 3. Start it right now, without rebooting, by double-clicking `run_pet.bat`.
 
