@@ -14,8 +14,8 @@ A desktop pet for Windows that lives on your screen, reacts to what you are doin
 ## What it does
 
 - Transparent, draggable, always-on-top pixel pet. No window chrome, no taskbar icon.
-- Greets you at login, and says bye before shutdown. It briefly holds shutdown just long enough to show the bye message.
-- Launches fast at login. The installer registers a Scheduled Task (`ClaudeAnimatedPet`, runs at logon, highest run level, action is `run_pet.bat` in this folder) instead of a Startup-folder shortcut, so it does not hit Windows' 10-15 second startup delay. The task priority is set to 0 (realtime, the highest Task Scheduler priority), with StartWhenAvailable on, so it runs first at logon, ahead of normal Startup apps. The pet itself also tries realtime process priority first, then high, then above normal, in `set_process_priority_extreme()` in `src/pet.py`. It also bumps its own process priority on launch. If the pet does not appear after a reboot, first double-click `run_pet.bat` manually: if it appears, the pet code is fine and only the task failed — check Task Scheduler Library for `ClaudeAnimatedPet` and its Last Run Result, then run `install.bat` again as administrator.
+- Greets you at login with the welcome mascot. It attempts a bye message on shutdown/restart, but Windows covers the desktop with its shutdown screen, so the bye bubble is not reliably visible on restart. The pet does NOT block shutdown any more, so there is no background-apps warning screen on restart, and restart stays clean. The pet comes back via Startup in about 15 seconds.
+- Launches at login via the Startup folder. The installer creates a Startup shortcut (`ClaudeAnimatedPet.vbs` in the Windows Startup folder, action is `run_pet.bat` in this folder), not a Scheduled Task. Task Scheduler was removed because it was unreliable on this PC: it was created with SUCCESS but did not run after reboot, and its priority step failed. Windows staggers Startup apps by about 10-15 seconds after login, so the pet appears in about 10-15 seconds, not instantly. That delay is accepted for reliability. The pet itself still tries realtime process priority first, then high, then above normal, in `set_process_priority_extreme()` in `src/pet.py`, but without an admin task token it will usually fall back to high. If the pet does not appear after a reboot, first double-click `run_pet.bat` manually: if it appears, the pet code is fine and only Startup failed — check the Startup folder for `ClaudeAnimatedPet.vbs`, and that no old `ClaudeAnimatedPet` task is still present in Task Scheduler Library (delete it once if it is, otherwise the pet may launch twice).
 - Reacts to the app in front of you, checked every 4 seconds. Each known app gets its own 50-line pool of random one-liners, in English, sarcastic and dark/funny. You are not expected to answer, it is just commentary.
   - Discord, Chrome, VS Code, Claude, Steam, Unity, Unity Hub
   - Any app it does not recognise gets one of 3 confused lines. Music apps (Spotify, Windows Media Player, Groove, Music) switch it to a bouncier "vibing" animation with the fixed line "nice track, vibing with you 🎶".
@@ -38,7 +38,7 @@ A desktop pet for Windows that lives on your screen, reacts to what you are doin
 - Drag it anywhere for a random drag line (15 in the pool), drop it for a random drop line (15 in the pool). It remembers where you left it, every reboot.
 - Goes quiet for 10 minutes, then starts doing its own thing. If nobody has touched it for 10 minutes, it fires a random idle pose from `assets/idle_extras/` every 45-110 seconds, each with its own caption, until you interact again.
 - Pixel-art animation built from static source art with transforms (bob, sway, squash/stretch, rotate). The frame loop ping-pongs instead of snapping back to frame 0, with a subtle sine-wave bob on top.
-- Main mascot is not static, and is kept separate from idle: every 2-3 jokes the talk mascot changes to a different main mascot from `assets/frames/` (7 main states), plus `assets/main_mascots/` if present (the 15 artboard mascots from the zip, not idle). `assets/idle_extras/` is NOT used in this cycle; idle fidgets alone use idle_extras, only after 10 minutes of no pet touch.
+- Main mascot is not static: after exactly 3 jokes the talk mascot changes to a different mascot from the joke pool. The joke pool is all mascots except the special-state ones, which stay only for their own state: idle/default, drag, drop, welcome, bye, and confuse, plus click/launch. In practice that is `assets/idle_extras/` minus those special files, plus `assets/main_mascots/` if present (the 15 artboard mascots from the zip). So the welcome mascot will never joke, the drag mascot will only appear while dragging, and so on. Idle fidget logic stays separate: it only fires after 10 minutes of no pet touch, on its own timer, even though it picks from the same idle_extras folder. Touching the pet does not reset the joke counter, and the new mascot applies immediately in the talk state, it does not wait for a touch.
 - Alt+F4 and window close are ignored on purpose, so the pet stays alive until shutdown. To quit manually, end the task in Task Manager.
 
 ## Install
@@ -52,10 +52,10 @@ Requirements: Windows 10/11, [Python 3.9+](https://www.python.org/downloads/) in
    The app saves its position file and loads its sprites relative to its own folder, so no fixed path is required.
 
 2. Double-click `install.bat` inside that folder.
-   The installer will ask for administrator rights once (a Windows permission prompt, click Yes). That is required because the fast logon task is registered at the highest run level, and Windows refuses that registration from a normal process with "Access is denied". If you click No, the installer exits without registering anything.
+   No administrator rights are needed any more, because there is no Scheduled Task to register. If an old `ClaudeAnimatedPet` task is still present, the installer tries to delete it once, so the pet does not launch twice. If that delete fails without admin rights, delete the old task once manually from Task Scheduler Library.
    This will:
    - `pip install` the dependencies (PyQt5, psutil, pywin32)
-   - Register the Scheduled Task described above. Only if Task Scheduler registration still fails for another reason does it fall back to a silent Startup-folder shortcut instead (which launches about 10-15 seconds late).
+   - Create the Startup shortcut described above, compulsory, not a fallback.
 
 3. Start it right now, without rebooting, by double-clicking `run_pet.bat`.
 
@@ -63,11 +63,11 @@ From your next login onward, it just shows up on its own.
 
 ### Uninstalling
 
-Remove the Scheduled Task:
+Delete `ClaudeAnimatedPet.vbs` from `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup`. If an old `ClaudeAnimatedPet` Scheduled Task is still present from an earlier version, delete it once from Task Scheduler Library with:
 ```
 schtasks /Delete /TN "ClaudeAnimatedPet" /F
 ```
-If it fell back to the Startup-folder method instead, delete `ClaudeAnimatedPet.vbs` from `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup`. Then delete the project folder. That is the entire footprint: no registry entries, no background services.
+Then delete the project folder. That is the entire footprint: no registry entries, no background services.
 
 ## Project structure
 
@@ -78,7 +78,7 @@ claude-animated-pet/
 ├── assets/idle_extras/        # static poses used for 10-min idle fidgets and stats mascots
 ├── gen_sprites_mascot.py      # builds animated frames from mascot pack art
 ├── gen_sprites.py             # original procedural (hand-coded) blocky art
-├── install.bat                # one-time setup + autostart registration
+├── install.bat                # one-time setup + Startup autostart registration, no Task Scheduler
 ├── run_pet.bat                # manual launch
 ├── requirements.txt
 ├── LICENSE                    # MIT, code/docs only, NOT assets/
