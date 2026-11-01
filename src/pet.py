@@ -63,11 +63,23 @@ ASSETS = os.path.join(BASE_DIR, "assets")
 FRAMES_DIR = os.path.join(ASSETS, "frames")
 IDLE_EXTRAS_DIR = os.path.join(ASSETS, "idle_extras")
 
-# Main mascot cycle pool, kept separate from idle.
-# Only assets/frames/ main states (7 mascots) plus, if present,
-# assets/main_mascots/ (the 15 artboard mascots from the zip, not idle).
-# assets/idle_extras/ is NOT in this pool. Idle fidgets stay separate:
-# they alone use idle_extras, and only after 10 minutes of no pet touch.
+# Joke mascot pool: all mascots except the special-state ones.
+# Special mascots stay only for their own state, never for jokes:
+# idle/default building-colorful-blocks, drag fast-performance-trail,
+# welcome welcome-pixel-banner, confuse confusion-spiral-pixel,
+# click/launch rocket-launch-success. Bye has no separate file, it uses
+# the current talk mascot. Everything else in assets/idle_extras/ plus
+# assets/main_mascots/ (artboard, if present) is in the joke pool.
+# Idle fidget logic stays separate: it only fires after 10 minutes of
+# no pet touch, on its own timer, even though it picks from the same
+# idle_extras folder. Joke cycle is a 3-joke counter, not a timer.
+JOKE_MASCOT_EXCLUDE = {
+    "building-colorful-blocks",
+    "fast-performance-trail",
+    "welcome-pixel-banner",
+    "confusion-spiral-pixel",
+    "rocket-launch-success",
+}
 CONFIG_PATH = os.path.join(BASE_DIR, "pet_config.json")
 
 SPRITE_SIZE = 150  # on-screen pet size (px)
@@ -1296,7 +1308,7 @@ class PetWidget(QWidget):
         self._main_mascot_file = None
         self._main_mascot_override = None
         self._jokes_since_change = 0
-        self._jokes_until_change = random.randint(2, 3)
+        self._jokes_until_change = 3
         self._last_fidget_time = 0.0
         self._fidget_due_gap = random.randint(*IDLE_FIDGET_INTERVAL_RANGE)
 
@@ -1365,6 +1377,9 @@ class PetWidget(QWidget):
             self._anim_dir = 1
 
     def _apply_frame(self):
+        if self.state == "talk" and self._main_mascot_override is not None and not self._fidgeting:
+            self.label.setPixmap(self._main_mascot_override)
+            return
         frames = self.sprites.frames(self.state)
         if not frames:
             return
@@ -1420,24 +1435,18 @@ class PetWidget(QWidget):
         self.say(random.choice(["see you soon!", "bye bro!", "see ya later!"]), duration_ms=2500)
     def _main_mascot_files(self):
         files = []
-        for state in ["idle", "vibe", "talk", "confused", "drag", "click", "welcome"]:
-            folder = os.path.join(FRAMES_DIR, state)
+        for folder in (IDLE_EXTRAS_DIR, os.path.join(ASSETS, "main_mascots")):
             try:
                 if os.path.isdir(folder):
                     for f in sorted(os.listdir(folder)):
-                        if f.lower().endswith(".png"):
-                            files.append(os.path.join(folder, f))
-                            break
+                        if not f.lower().endswith(".png"):
+                            continue
+                        stem = os.path.splitext(f)[0]
+                        if stem in JOKE_MASCOT_EXCLUDE:
+                            continue
+                        files.append(os.path.join(folder, f))
             except Exception:
                 continue
-        main_folder = os.path.join(ASSETS, "main_mascots")
-        try:
-            if os.path.isdir(main_folder):
-                for f in sorted(os.listdir(main_folder)):
-                    if f.lower().endswith(".png"):
-                        files.append(os.path.join(main_folder, f))
-        except Exception:
-            pass
         return files
 
     def _maybe_cycle_main_mascot(self):
@@ -1459,7 +1468,7 @@ class PetWidget(QWidget):
             self._main_mascot_file = path
             self._main_mascot_override = pix
         self._jokes_since_change = 0
-        self._jokes_until_change = random.randint(2, 3)
+        self._jokes_until_change = 3
 
     def _check_foreground_app(self):
         if self._dragging or self._launch_stage is not None:
@@ -1501,6 +1510,7 @@ class PetWidget(QWidget):
                     "claudeanimatedpet.exe", "pythonw.exe"):
             return
         self.set_state("confused")
+        self._maybe_cycle_main_mascot()
         self.say(random.choice(UNKNOWN_LINES))
 
     def _random_joke_or_question(self):
@@ -1707,8 +1717,11 @@ class PetWidget(QWidget):
 # Windows shutdown/logoff hook
 
 def install_shutdown_hook(app, pet):
-    """Intercept WM_QUERYENDSESSION so we can show the bye bubble before
-    the OS actually shuts the process down. Falls back to atexit elsewhere."""
+    """Best-effort bye on WM_QUERYENDSESSION. Windows covers the
+    desktop with its shutdown screen, so a bye bubble on restart is
+    not reliably visible, and blocking shutdown only shows the
+    background-apps warning screen. So we do not block: show bye,
+    allow close immediately, restart stays clean."""
     if not IS_WINDOWS or win32gui is None:
         import atexit
         atexit.register(lambda: None)
@@ -1723,12 +1736,11 @@ def install_shutdown_hook(app, pet):
     hwnd = int(pet.winId())
 
     user32 = ctypes.windll.user32
-    try:
-        user32.ShutdownBlockReasonCreate(
-            hwnd, ctypes.c_wchar_p("claude-animated-pet is saying bye...")
-        )
-    except Exception:
-        pass
+    # No ShutdownBlockReasonCreate here on purpose. Blocking shutdown
+    # makes Windows show its "apps running in background" screen and
+    # hides the desktop, so the bye bubble is never visible anyway.
+    # Without a block, restart/logoff is clean, no warning screen,
+    # and the pet comes back via Startup in about 15 seconds.
 
     old_wndproc = None
 
@@ -1744,10 +1756,8 @@ def install_shutdown_hook(app, pet):
             if not getattr(pet, "_bye_shown", False):
                 pet._bye_shown = True
                 pet.say_bye_and_allow_close()
-                QTimer.singleShot(1800, lambda: _release_block(hwnd))
-                return 0  # block briefly so the bubble is visible
-            # Bye already shown and block released: let Windows close us.
-            return ctypes.windll.user32.CallWindowProcW(old_wndproc, hWnd, msg, wParam, lParam)
+            pet._allow_close = True
+            return 1  # allow shutdown immediately, no block, no warning screen
         return ctypes.windll.user32.CallWindowProcW(old_wndproc, hWnd, msg, wParam, lParam)
 
     def _release_block(hwnd_):
