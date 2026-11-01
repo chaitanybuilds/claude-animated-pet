@@ -1714,28 +1714,15 @@ class PetWidget(QWidget):
         self.say("launching claude for you...", duration_ms=3000)
         try:
             if IS_WINDOWS:
-                # Claude Code needs Windows Terminal for its fullscreen
-                # renderer. cmd.exe does not support it, so Claude Code
-                # shows "fullscreen renderer has repeatedly failed" in
-                # cmd and never really starts. Try wt first, then
-                # PowerShell, then cmd as a last fallback only.
-                launched = False
-                for cmd in (
-                    ["wt.exe", "claude"],
-                    ["powershell.exe", "-NoExit", "-Command", "claude"],
+                # User asked for cmd only, no wt, no PowerShell.
+                # Claude Code in cmd may show the fullscreen renderer
+                # warning once, then it runs in non-fullscreen mode.
+                # The terminal is never terminated, see poll below,
+                # so Claude Code stays open in cmd for the user.
+                self._terminal_proc = subprocess.Popen(
                     ["cmd.exe", "/K", "claude"],
-                ):
-                    try:
-                        flags = 0
-                        if cmd[0] == "cmd.exe":
-                            flags = subprocess.CREATE_NEW_CONSOLE
-                        self._terminal_proc = subprocess.Popen(cmd, creationflags=flags)
-                        launched = True
-                        break
-                    except Exception:
-                        continue
-                if not launched:
-                    self._terminal_proc = None
+                    creationflags=subprocess.CREATE_NEW_CONSOLE,
+                )
             else:
                 self._terminal_proc = subprocess.Popen(
                     ["x-terminal-emulator", "-e", "bash -c 'claude; exec bash'"]
