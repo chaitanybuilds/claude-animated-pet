@@ -32,6 +32,7 @@ import json
 import math
 import random
 import subprocess
+import shutil
 import time
 
 from PyQt5.QtCore import Qt, QTimer, QPoint, pyqtSignal, QObject
@@ -1709,6 +1710,17 @@ class PetWidget(QWidget):
     def _start_claude_launch(self):
         if self._launch_stage is not None:
             return
+        # Direct fallback: if Claude Code CLI is not on this PC,
+        # do not open a terminal, just say so in English.
+        claude_found = shutil.which("claude") is not None
+        if not claude_found and IS_WINDOWS:
+            local_path = os.path.join(os.path.expanduser("~"), ".local", "bin", "claude.exe")
+            claude_found = os.path.exists(local_path)
+        if not claude_found:
+            self.set_state("click")
+            self.say("Claude Code CLI is not installed. Download Claude Code, restart your PC, and try again.", duration_ms=6000)
+            QTimer.singleShot(6000, lambda: self.set_state("idle"))
+            return
         self._launch_stage = "terminal_open"
         self.set_state("click")
         self.say("launching claude for you...", duration_ms=3000)
@@ -1760,7 +1772,7 @@ class PetWidget(QWidget):
             if found:
                 self.say("LETS CODE \U0001F4BB\U0001F525", duration_ms=3500)
             else:
-                self.say("claude took too long, terminal left open, check it", duration_ms=5000)
+                self.say("Claude Code CLI is not installed. Download Claude Code, restart your PC, and try again.", duration_ms=6000)
             QTimer.singleShot(3500, lambda: self.set_state("idle"))
             self._launch_stage = None
     def mousePressEvent(self, event):
