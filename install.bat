@@ -63,7 +63,14 @@ REM message - so this check only runs here, in the elevated installer.
 schtasks /Query /TN "%TASK_NAME%" >nul 2>&1
 if %ERRORLEVEL% NEQ 0 goto :fallback
 schtasks /Change /TN "%TASK_NAME%" /ENABLE >nul 2>&1
-echo Scheduled Task created and enabled: %TASK_NAME%, action is run_pet.bat in this folder.
+REM Set Task Scheduler priority to 0 = realtime, so the pet runs first
+REM at logon, ahead of normal Startup apps. This is separate from the
+REM run level (HIGHEST, admin token) and from the pet's own process
+REM priority bump in pet.py, which tries realtime then high then above
+REM normal. If PowerShell cannot set it, the task still runs, just at
+REM the default priority, so this step is allowed to fail safely.
+powershell -NoProfile -ExecutionPolicy Bypass -Command "try { $s = Get-ScheduledTask -TaskName '%TASK_NAME%'; $s.Settings.Priority = 0; $s.Settings.StartWhenAvailable = $true; $s.Settings.AllowStartOnBatteries = $true; $s.Settings.DisallowStartIfOnBatteries = $false; Set-ScheduledTask -InputObject $s | Out-Null; echo Task priority set to 0 realtime } catch { echo Task priority could not be set, task will run at default priority }"
+echo Scheduled Task created and enabled: %TASK_NAME%, action is run_pet.bat in this folder, priority realtime.
 goto :done
 
 :fallback
