@@ -13,7 +13,7 @@ Built by [@chaitanybuilds](https://github.com/chaitanybuilds). Shared free of ch
 
 - Transparent, draggable, always-on-top pixel pet. No window chrome, no taskbar icon.
 - Greets you at login, and says bye before shutdown. It briefly holds shutdown just long enough to show the bye message.
-- Launches fast at login. The installer registers a Scheduled Task (`ClaudeAnimatedPet`, runs at logon, highest run level) instead of a Startup-folder shortcut, so it does not hit Windows' 10-15 second startup delay. It also bumps its own process priority on launch.
+- Launches fast at login. The installer registers a Scheduled Task (`ClaudeAnimatedPet`, runs at logon, highest run level, action is `run_pet.bat` in this folder) instead of a Startup-folder shortcut, so it does not hit Windows' 10-15 second startup delay. It also bumps its own process priority on launch. If the pet does not appear after a reboot, first double-click `run_pet.bat` manually: if it appears, the pet code is fine and only the task failed — check Task Scheduler Library for `ClaudeAnimatedPet` and its Last Run Result, then run `install.bat` again as administrator.
 - Reacts to the app in front of you, checked every 4 seconds. Each known app gets its own 50-line pool of random one-liners, in English, sarcastic and dark/funny. You are not expected to answer, it is just commentary.
   - Discord, Chrome, VS Code, Claude, Steam, Unity, Unity Hub
   - Any app it does not recognise gets one of 3 confused lines. Music apps (Spotify, Windows Media Player, Groove, Music) switch it to a bouncier "vibing" animation with the fixed line "nice track, vibing with you 🎶".
