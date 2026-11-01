@@ -36,7 +36,7 @@ Built by [@chaitanybuilds](https://github.com/chaitanybuilds). Shared free of ch
 - Drag it anywhere for a random drag line (15 in the pool), drop it for a random drop line (15 in the pool). It remembers where you left it, every reboot.
 - Goes quiet for 10 minutes, then starts doing its own thing. If nobody has touched it for 10 minutes, it fires a random idle pose from `assets/idle_extras/` every 45-110 seconds, each with its own caption, until you interact again.
 - Pixel-art animation built from static source art with transforms (bob, sway, squash/stretch, rotate). The frame loop ping-pongs instead of snapping back to frame 0, with a subtle sine-wave bob on top.
-- Main mascot is not static: every 2-3 jokes the talk mascot changes to a different one of the 7 main state mascots (idle, vibe, talk, confused, drag, click, welcome). Idle fidget poses from `assets/idle_extras/` are NOT mixed into this cycle; they stay reserved for the 10-minute idle fidgets.
+- Main mascot is not static: every 2-3 jokes the talk mascot changes to a different mascot from the full zip pool already in the repo — `assets/idle_extras/` (60 mascots), plus `assets/main_mascots/` if present (the 15 artboard mascots, total 75). Idle fidget logic is separate (10-minute timer), it does not drive this cycle.
 - Alt+F4 and window close are ignored on purpose, so the pet stays alive until shutdown. To quit manually, end the task in Task Manager.
 
 ## Install
