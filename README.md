@@ -63,11 +63,18 @@ From your next login onward, it just shows up on its own.
 
 ### Uninstalling
 
-Delete `ClaudeAnimatedPet.vbs` from `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup`. If an old `ClaudeAnimatedPet` Scheduled Task is still present from an earlier version, delete it once from Task Scheduler Library with:
-```
-schtasks /Delete /TN "ClaudeAnimatedPet" /F
-```
-Then delete the project folder. That is the entire footprint: no registry entries, no background services.
+Double-click `uninstall.bat` inside the project folder. It runs as administrator, because deleting the old Scheduled Task (if present) needs admin rights.
+
+It will, in order:
+- Delete the Startup shortcut `ClaudeAnimatedPet.vbs` from `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup`
+- Delete the old Scheduled Task `ClaudeAnimatedPet`, if present, so the pet does not launch twice
+- Try to stop the running pet process, best effort only, only processes whose command line contains `pet.py`
+- Ask: Do you want to DELETE the project files too? (y/n) [Y = delete, N = keep]
+  - Y deletes ONLY the project files in this folder: `src/`, `assets/`, `.git/`, `gen_sprites.py`, `gen_sprites_mascot.py`, `install.bat`, `run_pet.bat`, `requirements.txt`, `LICENSE`, `ASSETS-LICENSE.md`, `README.md`, `.gitignore`, `pet_config.json`, and `uninstall.bat` itself as the last step. Any other file in this folder is left untouched.
+  - N keeps all project files, so you can run `uninstall.bat` again later.
+- Print `thank you for using my project - Chaitany`, wait for a key press, then close the terminal.
+
+Manual uninstall, if you do not want to run `uninstall.bat`: delete `ClaudeAnimatedPet.vbs` from the Startup folder above, delete the old task once with `schtasks /Delete /TN "ClaudeAnimatedPet" /F` if present, then delete the project folder. That is the entire footprint: no registry entries, no background services.
 
 ## Project structure
 
@@ -79,6 +86,7 @@ claude-animated-pet/
 ├── gen_sprites_mascot.py      # builds animated frames from mascot pack art
 ├── gen_sprites.py             # original procedural (hand-coded) blocky art
 ├── install.bat                # one-time setup + Startup autostart registration, no Task Scheduler
+├── uninstall.bat              # admin uninstaller, Startup + old task delete, Y/N project-files-only delete
 ├── run_pet.bat                # manual launch
 ├── requirements.txt
 ├── LICENSE                    # MIT, code/docs only, NOT assets/
