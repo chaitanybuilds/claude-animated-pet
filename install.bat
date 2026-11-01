@@ -53,7 +53,8 @@ REM instead, so we use that now.
 if exist "%VBS_PATH%" del "%VBS_PATH%"
 
 echo Registering a Scheduled Task to launch at logon (skips the Startup-folder delay)...
-schtasks /Create /F /SC ONLOGON /RL HIGHEST /IT /TN "%TASK_NAME%" /TR "pythonw.exe \"%INSTALL_DIR%src\pet.py\""
+schtasks /Delete /F /TN "%TASK_NAME%" >nul 2>&1
+schtasks /Create /F /SC ONLOGON /RL HIGHEST /IT /TN "%TASK_NAME%" /TR "\"%INSTALL_DIR%run_pet.bat\""
 if %ERRORLEVEL% NEQ 0 goto :fallback
 REM Verify the task actually exists now that we are elevated. A plain
 REM query from a non-elevated prompt cannot see highest-level tasks,
@@ -61,10 +62,12 @@ REM which is the confusing "no scheduled tasks at your access level"
 REM message - so this check only runs here, in the elevated installer.
 schtasks /Query /TN "%TASK_NAME%" >nul 2>&1
 if %ERRORLEVEL% NEQ 0 goto :fallback
+schtasks /Change /TN "%TASK_NAME%" /ENABLE >nul 2>&1
+echo Scheduled Task created and enabled: %TASK_NAME%, action is run_pet.bat in this folder.
 goto :done
 
 :fallback
-echo Scheduled Task creation failed - falling back to the Startup-folder method.
+echo Scheduled Task creation FAILED - falling back to the Startup-folder method. The fast task was NOT created.
 echo The pet will still autostart, but about 10-15s late after login.
 echo To get the fast launch instead, run install.bat again and click Yes
 echo on the administrator permission prompt.
@@ -77,8 +80,8 @@ goto :done
 
 :done
 echo.
-echo Done! claude-animated-pet will now launch automatically every time you log in,
-echo right away instead of 10-15s late.
+echo Done! Check above which method was used: Scheduled Task, or Startup-folder fallback.
+echo If it was the fallback, the pet will still autostart, but about 10-15s late after login.
 echo To start it right now without rebooting, double-click run_pet.bat.
 echo.
 pause
