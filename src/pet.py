@@ -1714,11 +1714,28 @@ class PetWidget(QWidget):
         self.say("launching claude for you...", duration_ms=3000)
         try:
             if IS_WINDOWS:
-                # open a terminal and type claude (old CLI launch)
-                self._terminal_proc = subprocess.Popen(
+                # Claude Code needs Windows Terminal for its fullscreen
+                # renderer. cmd.exe does not support it, so Claude Code
+                # shows "fullscreen renderer has repeatedly failed" in
+                # cmd and never really starts. Try wt first, then
+                # PowerShell, then cmd as a last fallback only.
+                launched = False
+                for cmd in (
+                    ["wt.exe", "claude"],
+                    ["powershell.exe", "-NoExit", "-Command", "claude"],
                     ["cmd.exe", "/K", "claude"],
-                    creationflags=subprocess.CREATE_NEW_CONSOLE,
-                )
+                ):
+                    try:
+                        flags = 0
+                        if cmd[0] == "cmd.exe":
+                            flags = subprocess.CREATE_NEW_CONSOLE
+                        self._terminal_proc = subprocess.Popen(cmd, creationflags=flags)
+                        launched = True
+                        break
+                    except Exception:
+                        continue
+                if not launched:
+                    self._terminal_proc = None
             else:
                 self._terminal_proc = subprocess.Popen(
                     ["x-terminal-emulator", "-e", "bash -c 'claude; exec bash'"]
@@ -1746,15 +1763,17 @@ class PetWidget(QWidget):
         timed_out = self._claude_wait_elapsed > 25_000
         if found or timed_out:
             self._claude_wait_timer.stop()
-            # close the terminal we opened
-            if getattr(self, "_terminal_proc", None) is not None:
-                try:
-                    self._terminal_proc.terminate()
-                except Exception:
-                    pass
-                self._terminal_proc = None
+            # Never terminate the terminal we opened. For Claude Code
+            # the terminal IS the app, killing it kills Claude Code.
+            # The old code terminated it, which is why click-to-launch
+            # never actually left Claude running. Just drop our
+            # reference and leave the terminal open for the user.
+            self._terminal_proc = None
             self.set_state("click")
-            self.say("LETS CODE \U0001F4BB\U0001F525", duration_ms=3500)
+            if found:
+                self.say("LETS CODE \U0001F4BB\U0001F525", duration_ms=3500)
+            else:
+                self.say("claude took too long, terminal left open, check it", duration_ms=5000)
             QTimer.singleShot(3500, lambda: self.set_state("idle"))
             self._launch_stage = None
     def mousePressEvent(self, event):
