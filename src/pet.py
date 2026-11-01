@@ -62,6 +62,11 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ASSETS = os.path.join(BASE_DIR, "assets")
 FRAMES_DIR = os.path.join(ASSETS, "frames")
 IDLE_EXTRAS_DIR = os.path.join(ASSETS, "idle_extras")
+
+# Main mascots for the talk animation cycle. These are the 7 main state
+# mascots from assets/frames/, NOT the idle_extras poses. Idle poses stay
+# reserved for the 10-minute idle fidgets and are never mixed into this cycle.
+MAIN_MASCOT_STATES = ["idle", "vibe", "talk", "confused", "drag", "click", "welcome"]
 CONFIG_PATH = os.path.join(BASE_DIR, "pet_config.json")
 
 SPRITE_SIZE = 150  # on-screen pet size (px)
@@ -1287,6 +1292,10 @@ class PetWidget(QWidget):
 
         self._last_interaction = time.time()
         self._fidgeting = False
+        self._main_mascot_state = "talk"
+        self._main_mascot_override = None
+        self._jokes_since_change = 0
+        self._jokes_until_change = random.randint(2, 3)
         self._last_fidget_time = 0.0
         self._fidget_due_gap = random.randint(*IDLE_FIDGET_INTERVAL_RANGE)
 
@@ -1376,6 +1385,10 @@ class PetWidget(QWidget):
         if self._fidgeting:
             self._apply_bob()
             return
+        if self.state == "talk" and self._main_mascot_override is not None:
+            self.label.setPixmap(self._main_mascot_override)
+            self._apply_bob()
+            return
         frames = self.sprites.frames(self.state)
         n = len(frames)
         if n <= 1:
@@ -1404,6 +1417,31 @@ class PetWidget(QWidget):
     def say_bye_and_allow_close(self):
         self.set_state("talk")
         self.say(random.choice(["see you soon!", "bye bro!", "see ya later!"]), duration_ms=2500)
+    def _load_main_mascot(self, state):
+        folder = os.path.join(FRAMES_DIR, state)
+        try:
+            files = sorted(f for f in os.listdir(folder) if f.endswith(".png"))
+            if not files:
+                return None
+            return QPixmap(os.path.join(folder, files[0])).scaled(
+                SPRITE_SIZE, SPRITE_SIZE, Qt.KeepAspectRatio, Qt.FastTransformation
+            )
+        except Exception:
+            return None
+
+    def _maybe_cycle_main_mascot(self):
+        self._jokes_since_change += 1
+        if self._jokes_since_change < self._jokes_until_change:
+            return
+        choices = [s for s in MAIN_MASCOT_STATES if s != self._main_mascot_state]
+        new_state = random.choice(choices) if choices else "talk"
+        pix = self._load_main_mascot(new_state)
+        if pix is not None and not pix.isNull():
+            self._main_mascot_state = new_state
+            self._main_mascot_override = pix
+        self._jokes_since_change = 0
+        self._jokes_until_change = random.randint(2, 3)
+
     def _check_foreground_app(self):
         if self._dragging or self._launch_stage is not None:
             return
@@ -1424,12 +1462,14 @@ class PetWidget(QWidget):
         if proc in KNOWN_APPS:
             self._last_terminal = None
             self.set_state("talk")
+            self._maybe_cycle_main_mascot()
             self.say(random.choice(APP_QUESTIONS[proc]))
             return
 
         if terminal in TERMINAL_QUESTIONS:
             self._last_terminal = terminal
             self.set_state("talk")
+            self._maybe_cycle_main_mascot()
             self.say(random.choice(TERMINAL_QUESTIONS[terminal]))
             return
 
@@ -1455,6 +1495,9 @@ class PetWidget(QWidget):
             pool += APP_QUESTIONS[proc]
         elif self._last_terminal in TERMINAL_QUESTIONS:
             pool += TERMINAL_QUESTIONS[self._last_terminal]
+        if proc not in MUSIC_PROCS:
+            self.set_state("talk")
+            self._maybe_cycle_main_mascot()
         self.say(random.choice(pool), duration_ms=5000)
     def _mark_interaction(self):
         self._last_interaction = time.time()
