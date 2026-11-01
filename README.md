@@ -28,6 +28,7 @@ A desktop pet for Windows that lives on your screen, reacts to what you are doin
   - Windows Terminal (`WindowsTerminal.exe`, `wt.exe`)
   - WSL (`wsl.exe`, `wslhost.exe`, System32 `bash.exe`)
   - `bash.exe` is resolved by its exe path, and `conhost.exe` by its parent shell, so Git Bash and WSL are not mixed up. `pythonw.exe` stays ignored, because that is how the pet itself runs.
+- Claude Code: detected automatically, not just when its window is foreground. The pet scans running processes every 4 seconds for `claude.exe` whose exe path is in `.local\bin` (the Claude Code CLI launcher, e.g. `%USERPROFILE%\.local\bin\claude.exe`), plus a node.exe fallback whose command line contains claude and .local. When Claude Code starts, the pet says one extreme dark funny Claude Code joke once, then the 30-second joke pool switches to the 50-line Claude Code pool until Claude Code stops. If the foreground window itself is `claude.exe` from `.local\bin`, it also uses the Claude Code pool instead of the generic Claude app pool.
 - Watches your system, on a separate timer, so app jokes and idle fidgets keep working:
   - RAM at 75% or more of total RAM: 20 jokes, mascot `system-monitoring-dashboard.png`
   - CPU at 80% or more: 20 jokes, mascot `processing-logic-symbols.png`
