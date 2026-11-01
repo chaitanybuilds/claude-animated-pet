@@ -63,10 +63,12 @@ ASSETS = os.path.join(BASE_DIR, "assets")
 FRAMES_DIR = os.path.join(ASSETS, "frames")
 IDLE_EXTRAS_DIR = os.path.join(ASSETS, "idle_extras")
 
-# Main mascots for the talk animation cycle. These are the 7 main state
-# mascots from assets/frames/, NOT the idle_extras poses. Idle poses stay
-# reserved for the 10-minute idle fidgets and are never mixed into this cycle.
-MAIN_MASCOT_STATES = ["idle", "vibe", "talk", "confused", "drag", "click", "welcome"]
+# Main mascot cycle pool: every mascot PNG already in the repo.
+# That is assets/idle_extras/ (60 mascots from the zip) plus, if present,
+# assets/main_mascots/ (the 15 artboard mascots from the zip, total 75).
+# Idle fidget logic is separate: it only fires after 10 minutes of no
+# pet touch, on its own timer. This cycle only fires on jokes, every 2-3
+# jokes, so sharing the same art folder does not mix the two logics.
 CONFIG_PATH = os.path.join(BASE_DIR, "pet_config.json")
 
 SPRITE_SIZE = 150  # on-screen pet size (px)
@@ -1292,7 +1294,7 @@ class PetWidget(QWidget):
 
         self._last_interaction = time.time()
         self._fidgeting = False
-        self._main_mascot_state = "talk"
+        self._main_mascot_file = None
         self._main_mascot_override = None
         self._jokes_since_change = 0
         self._jokes_until_change = random.randint(2, 3)
@@ -1417,27 +1419,35 @@ class PetWidget(QWidget):
     def say_bye_and_allow_close(self):
         self.set_state("talk")
         self.say(random.choice(["see you soon!", "bye bro!", "see ya later!"]), duration_ms=2500)
-    def _load_main_mascot(self, state):
-        folder = os.path.join(FRAMES_DIR, state)
-        try:
-            files = sorted(f for f in os.listdir(folder) if f.endswith(".png"))
-            if not files:
-                return None
-            return QPixmap(os.path.join(folder, files[0])).scaled(
-                SPRITE_SIZE, SPRITE_SIZE, Qt.KeepAspectRatio, Qt.FastTransformation
-            )
-        except Exception:
-            return None
+    def _main_mascot_files(self):
+        files = []
+        for folder in (IDLE_EXTRAS_DIR, os.path.join(ASSETS, "main_mascots")):
+            try:
+                if os.path.isdir(folder):
+                    for f in sorted(os.listdir(folder)):
+                        if f.lower().endswith(".png"):
+                            files.append(os.path.join(folder, f))
+            except Exception:
+                continue
+        return files
 
     def _maybe_cycle_main_mascot(self):
         self._jokes_since_change += 1
         if self._jokes_since_change < self._jokes_until_change:
             return
-        choices = [s for s in MAIN_MASCOT_STATES if s != self._main_mascot_state]
-        new_state = random.choice(choices) if choices else "talk"
-        pix = self._load_main_mascot(new_state)
+        files = self._main_mascot_files()
+        choices = [f for f in files if f != self._main_mascot_file]
+        if not choices:
+            return
+        path = random.choice(choices)
+        try:
+            pix = QPixmap(path).scaled(
+                SPRITE_SIZE, SPRITE_SIZE, Qt.KeepAspectRatio, Qt.FastTransformation
+            )
+        except Exception:
+            pix = None
         if pix is not None and not pix.isNull():
-            self._main_mascot_state = new_state
+            self._main_mascot_file = path
             self._main_mascot_override = pix
         self._jokes_since_change = 0
         self._jokes_until_change = random.randint(2, 3)
