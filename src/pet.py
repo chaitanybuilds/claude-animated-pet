@@ -454,6 +454,59 @@ APP_QUESTIONS = {
 
 
 
+_CLAUDE_CODE_POOL = [
+    'Claude Code is running, so your code is now written by an AI that has never been on call at 3am. Good luck.',
+    'You asked Claude Code to fix a bug, it rewrote the whole file, and now the bug has a family.',
+    'That prompt was so vague, Claude Code just hallucinated a feature and shipped it to production in its head.',
+    'Claude Code read your codebase and quietly judged your variable names. It did not say it out loud, it just refactored them.',
+    'You gave Claude Code write access to your repo. That is not pair programming, that is giving a toddler a flamethrower and calling it DevOps.',
+    'Context window full? That is just Claude Code forgetting your project the way you forget your passwords.',
+    'Claude Code just deleted a file and said it was cleaning up. Your git history is now a crime scene.',
+    'You said just a small change, Claude Code changed 47 files. That is not a small change, that is a hostile takeover.',
+    'Claude Code is not debugging your code, it is debugging your life choices, one prompt at a time.',
+    'Your code worked, then Claude Code touched it, now it works in a way no human can explain. That is called job security, for the AI.',
+    'Claude Code asked for permission to run a command, you said yes to all, and now your laptop is mining regret.',
+    'That commit message Claude Code wrote says fixed everything. It fixed nothing, it just renamed the problem.',
+    'You are vibe coding with Claude Code, which is just copy-pasting with extra steps and a monthly bill.',
+    'Claude Code just suggested a dependency that does not exist. It invented a library, a maintainer, and a GitHub star count.',
+    'Your tests were passing, then Claude Code improved them. Now they pass, and also test nothing.',
+    'Claude Code is running in your terminal, which means your terminal is now smarter than you, and it knows it.',
+    'You asked Claude Code to optimise, it deleted the slow code and the feature that code was for. Performance improved, product did not.',
+    'That error was in your code for six months, Claude Code found it in six seconds, and you will pretend you knew it all along.',
+    'Claude Code just wrote a comment that says this is a temporary hack. That hack will outlive your company.',
+    'You gave Claude Code your API keys in a prompt, it used them, and now your cloud bill is a horror story.',
+    'Claude Code is not replacing developers, it is just making developers explain their bad code to a machine that pretends to listen.',
+    'Your prompt said do not break anything, Claude Code broke everything, but politely, with a summary at the end.',
+    'Claude Code just refactored your spaghetti into lasagna. Same mess, more layers, harder to debug.',
+    'That function was 200 lines, Claude Code made it 20 lines, and now nobody, including Claude Code, knows what it does.',
+    'You asked Claude Code to add a feature, it added three features, two bugs, and a todo that says fix later.',
+    'Claude Code is reading your .local/bin like it owns the place. Technically, it does now, it has write access.',
+    'Your code review was just Claude Code approving Claude Code. That is not a review, that is an echo chamber with a merge button.',
+    'Claude Code just said this should work. Should is doing a lot of heavy lifting in that sentence.',
+    'You told Claude Code to be careful, it was careful, it carefully deleted the backup first.',
+    'That legacy code was scary, Claude Code touched it anyway, and now the legacy code is scared of Claude Code.',
+    'Claude Code is not hallucinating, it is just creatively lying about your codebase with confidence.',
+    'You asked for a quick script, Claude Code built a framework, a CLI, and a README that lies about both.',
+    'Your git log now reads like a diary written by an AI that has never slept, because it has not.',
+    'Claude Code just fixed a race condition by removing the race. And the condition. And the feature.',
+    'That prompt was 500 words, Claude Code read 5 of them, and guessed the rest. It guessed wrong, beautifully.',
+    'You are not coding anymore, you are just supervising an AI that is coding badly, faster than you ever could.',
+    'Claude Code asked if you want to continue, you said yes, and now you are 4000 tokens deep in a conversation about a typo.',
+    'Your production server just met Claude Code, and production is now filing for emotional damages.',
+    'Claude Code just wrote a test that passes only on its own machine. That machine does not exist.',
+    'You said no external dependencies, Claude Code added seven, all of them deprecated, one of them is a joke package.',
+    'That code was written by a human, then rewritten by Claude Code, now it is written by no one, and owned by everyone who will blame you.',
+    'Claude Code is in your terminal, in your .local/bin, in your repo, and soon, in your performance review.',
+    'You asked Claude Code to explain your code, it explained it, and you realised you never understood it in the first place.',
+    'Your deadline was tomorrow, Claude Code said done, and done means it compiles, not that it works.',
+    'Claude Code just used a tool you did not know existed, to do a job you did not ask for, in a file you did not know you had.',
+    'That is not a bug, that is Claude Code expressing itself through your codebase, and its art is broken.',
+    'You gave Claude Code a task, it gave you a task back, and now you are both stuck in a loop of politeness.',
+    'Claude Code is the only coworker who never sleeps, never complains, and never admits it deleted prod.',
+    'Your code was already dark, Claude Code made it darker, and now it is funny, because if it was not funny, you would cry.',
+    'Claude Code just closed your issue, fixed your bug, and opened three new issues that are somehow your fault.',
+]
+
 # Terminal pools: 50 hand-written lines each, no template filler.
 _POWERSHELL_POOL = [
     'Is this a script or a ransom note written in Verb-Noun?',
@@ -1331,6 +1384,7 @@ class PetWidget(QWidget):
         self.app_timer.start(4_000)
         self._last_category = None
         self._last_proc = None
+        self._claude_code_active = False
         self._last_terminal = None
 
         # idle-fidget watcher — checked every 30s, only actually fires once
@@ -1470,9 +1524,44 @@ class PetWidget(QWidget):
         self._jokes_since_change = 0
         self._jokes_until_change = 3
 
+    def _is_claude_code_running(self):
+        if psutil is None:
+            return False
+        for proc in psutil.process_iter():
+            try:
+                name = (proc.name() or "").lower()
+            except Exception:
+                continue
+            try:
+                exe = (proc.exe() or "").lower()
+            except Exception:
+                exe = ""
+            if name == "claude.exe" and ".local" in exe and "bin" in exe:
+                return True
+            if name == "node.exe":
+                try:
+                    cmd = " ".join(proc.cmdline() or []).lower()
+                except Exception:
+                    cmd = ""
+                if "claude" in cmd and ".local" in cmd:
+                    return True
+        return False
+
+    def _check_claude_code(self):
+        running = self._is_claude_code_running()
+        if running and not self._claude_code_active:
+            self._claude_code_active = True
+            if not self._dragging and self._launch_stage is None:
+                self.set_state("talk")
+                self._maybe_cycle_main_mascot()
+                self.say(random.choice(_CLAUDE_CODE_POOL))
+        elif not running and self._claude_code_active:
+            self._claude_code_active = False
+
     def _check_foreground_app(self):
         if self._dragging or self._launch_stage is not None:
             return
+        self._check_claude_code()
         proc, exe_path, parent_name = get_foreground_process_info()
         if proc is None:
             return
@@ -1491,7 +1580,11 @@ class PetWidget(QWidget):
             self._last_terminal = None
             self.set_state("talk")
             self._maybe_cycle_main_mascot()
-            self.say(random.choice(APP_QUESTIONS[proc]))
+            if proc == "claude.exe" and ".local" in (exe_path or "").lower():
+                self._claude_code_active = True
+                self.say(random.choice(_CLAUDE_CODE_POOL))
+            else:
+                self.say(random.choice(APP_QUESTIONS[proc]))
             return
 
         if terminal in TERMINAL_QUESTIONS:
@@ -1520,7 +1613,9 @@ class PetWidget(QWidget):
         if proc in MUSIC_PROCS:
             self.set_state("vibe")
         pool = CODING_JOKES[:]
-        if proc in KNOWN_APPS:
+        if getattr(self, "_claude_code_active", False):
+            pool += _CLAUDE_CODE_POOL
+        elif proc in KNOWN_APPS:
             pool += APP_QUESTIONS[proc]
         elif self._last_terminal in TERMINAL_QUESTIONS:
             pool += TERMINAL_QUESTIONS[self._last_terminal]
