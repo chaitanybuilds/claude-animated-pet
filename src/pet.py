@@ -63,12 +63,11 @@ ASSETS = os.path.join(BASE_DIR, "assets")
 FRAMES_DIR = os.path.join(ASSETS, "frames")
 IDLE_EXTRAS_DIR = os.path.join(ASSETS, "idle_extras")
 
-# Main mascot cycle pool: every mascot PNG already in the repo.
-# That is assets/idle_extras/ (60 mascots from the zip) plus, if present,
-# assets/main_mascots/ (the 15 artboard mascots from the zip, total 75).
-# Idle fidget logic is separate: it only fires after 10 minutes of no
-# pet touch, on its own timer. This cycle only fires on jokes, every 2-3
-# jokes, so sharing the same art folder does not mix the two logics.
+# Main mascot cycle pool, kept separate from idle.
+# Only assets/frames/ main states (7 mascots) plus, if present,
+# assets/main_mascots/ (the 15 artboard mascots from the zip, not idle).
+# assets/idle_extras/ is NOT in this pool. Idle fidgets stay separate:
+# they alone use idle_extras, and only after 10 minutes of no pet touch.
 CONFIG_PATH = os.path.join(BASE_DIR, "pet_config.json")
 
 SPRITE_SIZE = 150  # on-screen pet size (px)
@@ -1421,14 +1420,24 @@ class PetWidget(QWidget):
         self.say(random.choice(["see you soon!", "bye bro!", "see ya later!"]), duration_ms=2500)
     def _main_mascot_files(self):
         files = []
-        for folder in (IDLE_EXTRAS_DIR, os.path.join(ASSETS, "main_mascots")):
+        for state in ["idle", "vibe", "talk", "confused", "drag", "click", "welcome"]:
+            folder = os.path.join(FRAMES_DIR, state)
             try:
                 if os.path.isdir(folder):
                     for f in sorted(os.listdir(folder)):
                         if f.lower().endswith(".png"):
                             files.append(os.path.join(folder, f))
+                            break
             except Exception:
                 continue
+        main_folder = os.path.join(ASSETS, "main_mascots")
+        try:
+            if os.path.isdir(main_folder):
+                for f in sorted(os.listdir(main_folder)):
+                    if f.lower().endswith(".png"):
+                        files.append(os.path.join(main_folder, f))
+        except Exception:
+            pass
         return files
 
     def _maybe_cycle_main_mascot(self):
