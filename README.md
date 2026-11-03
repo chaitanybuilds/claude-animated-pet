@@ -16,35 +16,21 @@ The Windows version is in the repo root. The macOS version lives in `.mac/` — 
 ## What it does
 
 - Transparent, draggable, always-on-top pixel pet. No window chrome, no taskbar icon.
-- Greets you at login with the welcome mascot. It attempts a bye message on shutdown/restart, but Windows covers the desktop with its shutdown screen, so the bye bubble is not reliably visible on restart. The pet does NOT block shutdown any more, so there is no background-apps warning screen on restart, and restart stays clean. The pet comes back via Startup in about 15 seconds.
-- Launches at login via the Startup folder. On macOS, it launches at login via a per-user LaunchAgent instead, see [macOS](#macos) below. The Mac installer does not need sudo. The installer creates a Startup shortcut (`ClaudeAnimatedPet.vbs` in the Windows Startup folder, action is `run_pet.bat` in this folder), not a Scheduled Task. Task Scheduler was removed because it was unreliable on this PC: it was created with SUCCESS but did not run after reboot, and its priority step failed. Windows staggers Startup apps by about 10-15 seconds after login, so the pet appears in about 10-15 seconds, not instantly. That delay is accepted for reliability. The pet itself still tries realtime process priority first, then high, then above normal, in `set_process_priority_extreme()` in `src/pet.py`, but without an admin task token it will usually fall back to high. If the pet does not appear after a reboot, first double-click `run_pet.bat` manually: if it appears, the pet code is fine and only Startup failed — check the Startup folder for `ClaudeAnimatedPet.vbs`, and that no old `ClaudeAnimatedPet` task is still present in Task Scheduler Library (delete it once if it is, otherwise the pet may launch twice).
-- Reacts to the app in front of you, checked every 4 seconds. Each known app gets its own 50-line pool of random one-liners, in English, sarcastic and dark/funny. You are not expected to answer, it is just commentary.
-  - Discord, Chrome, VS Code, Claude, Steam, Unity, Unity Hub
-  - Any app it does not recognise gets one of 3 confused lines. Music apps (Spotify, Windows Media Player, Groove, Music) switch it to a bouncier "vibing" animation with the fixed line "nice track, vibing with you 🎶".
-- Reacts to terminals too, each with its own 50-line pool, also English, sarcastic and dark/funny:
-  - PowerShell (`powershell.exe`, `pwsh.exe`)
-  - cmd (`cmd.exe`, `conhost.exe`)
-  - Git (`git.exe`, `git-bash.exe`, Git's `bash.exe`)
-  - Node (`node.exe`)
-  - Python (`python.exe`)
-  - Windows Terminal (`WindowsTerminal.exe`, `wt.exe`)
-  - WSL (`wsl.exe`, `wslhost.exe`, System32 `bash.exe`)
-  - `bash.exe` is resolved by its exe path, and `conhost.exe` by its parent shell, so Git Bash and WSL are not mixed up. `pythonw.exe` stays ignored, because that is how the pet itself runs.
-- Claude Code: detected automatically, not just when its window is foreground. The pet scans running processes every 4 seconds for `claude.exe` whose exe path is in `.local\bin` (the Claude Code CLI launcher, e.g. `%USERPROFILE%\.local\bin\claude.exe`), plus a node.exe fallback whose command line contains claude and .local. On macOS the same check uses `claude` (no `.exe`) at `~/.local/bin/claude`, plus a `node` fallback. When Claude Code starts, the pet says one extreme dark funny Claude Code joke once, then the 30-second joke pool switches to the 50-line Claude Code pool until Claude Code stops. If the foreground window itself is `claude.exe` from `.local\bin`, it also uses the Claude Code pool instead of the generic Claude app pool.
-- Watches your system, on a separate timer, so app jokes and idle fidgets keep working:
-  - RAM at 75% or more of total RAM: 20 jokes, mascot `system-monitoring-dashboard.png`
-  - CPU at 80% or more: 20 jokes, mascot `processing-logic-symbols.png`
-  - Temperature at 50°C or more: 20 jokes, mascot `fine-under-pressure.png`
-  - Each trigger has a 5-minute cooldown, and if several fire at once only one is picked, so it does not spam. Temperature is best-effort on Windows: `psutil` does not report it there, so the code falls back to `nvidia-smi` if present, otherwise that trigger stays silent while RAM and CPU keep working.
-- Tells a random coding joke every 30 seconds. If the foreground app is a known app or terminal, that app's pool is added to the joke pool for that round.
-- Click it and it opens cmd.exe and runs the `claude` CLI there, as requested, no Windows Terminal, no PowerShell. On macOS, click opens Terminal.app instead, via `osascript`, with the same never-close rule and the same not-installed fallback, except it says restart your Mac. Claude Code may show a fullscreen renderer warning once in cmd, then it runs in non-fullscreen mode. The pet does NOT close that terminal: for Claude Code the terminal is the app, closing it would kill Claude Code. The pet says "launching claude for you..." first, then "LETS CODE 💻🔥" once Claude is found, and leaves the terminal open. If Claude Code CLI is not installed on that PC, the pet does not open a terminal, it directly says: "Claude Code CLI is not installed. Download Claude Code, restart your PC, and try again." The same message is shown if Claude is not found in 25 seconds.
-- Drag it anywhere for a random drag line (15 in the pool), drop it for a random drop line (15 in the pool). It remembers where you left it, every reboot.
-- Goes quiet for 10 minutes, then starts doing its own thing. If nobody has touched it for 10 minutes, it fires a random idle pose from `assets/idle_extras/` every 45-110 seconds, each with its own caption, until you interact again.
-- Pixel-art animation built from static source art with transforms (bob, sway, squash/stretch, rotate). The frame loop ping-pongs instead of snapping back to frame 0, with a subtle sine-wave bob on top.
-- Main mascot is not static: after exactly 3 jokes the talk mascot changes to a different mascot from the joke pool. The joke pool is all mascots except the special-state ones, which stay only for their own state: idle/default, drag, drop, welcome, bye, and confuse, plus click/launch. In practice that is `assets/idle_extras/` minus those special files, plus `assets/main_mascots/` if present (the 15 artboard mascots from the zip). So the welcome mascot will never joke, the drag mascot will only appear while dragging, and so on. Idle fidget logic stays separate: it only fires after 10 minutes of no pet touch, on its own timer, even though it picks from the same idle_extras folder. Touching the pet does not reset the joke counter, and the new mascot applies immediately in the talk state, it does not wait for a touch.
-- Alt+F4 and window close are ignored on purpose, so the pet stays alive until shutdown. To quit manually, end the task in Task Manager.
+- Greets you at login, and remembers where you left it.
+- Reacts to the app in front of you, checked every 4 seconds. Discord, Chrome, VS Code, Claude, Steam, Unity, and Unity Hub each get their own 50-line pool of English, sarcastic, dark/funny one-liners. Unknown apps get a confused line, music apps switch it to a vibing animation.
+- Reacts to terminals too, each with its own 50-line pool: PowerShell, cmd, Git, Node, Python, Windows Terminal, and WSL. On macOS, all terminal apps share one generic terminal pool.
+- Detects Claude Code automatically in the background. When it starts, the pet says one Claude Code joke, then switches the 30-second joke pool to the Claude Code pool until it stops.
+- Watches system stats on a separate timer: RAM at 75% or more, CPU at 80% or more, or temperature at 50°C or more. Each trigger has 20 jokes, a 5-minute cooldown, and its own mascot. Temperature is best-effort.
+- Tells a random coding joke every 30 seconds.
+- Click it to open a terminal and run `claude`: `cmd.exe` on Windows, Terminal.app on macOS. It never closes that terminal, and if Claude Code is not installed, it says so directly instead of opening anything.
+- Drag it anywhere for a random drag line, drop it for a random drop line.
+- After 10 minutes untouched, it does idle fidgets from `assets/idle_extras/` every 45-110 seconds, until you interact again.
+- After exactly 3 jokes, its talk mascot changes to another mascot from the joke pool, excluding special-state mascots.
+- Window close is ignored on purpose. To quit manually, end the task in Task Manager on Windows, or quit `pet.py` from Activity Monitor on macOS.
 
 ## Install
+
+### Windows
 
 Requirements: Windows 10/11, [Python 3.9+](https://www.python.org/downloads/) installed and on your `PATH` (check "Add python.exe to PATH" during setup).
 
@@ -53,37 +39,40 @@ Requirements: Windows 10/11, [Python 3.9+](https://www.python.org/downloads/) in
    git clone https://github.com/chaitanybuilds/claude-animated-pet.git
    ```
    The app saves its position file and loads its sprites relative to its own folder, so no fixed path is required.
-
-2. Double-click `install.bat` inside that folder.
-   No administrator rights are needed any more, because there is no Scheduled Task to register. If an old `ClaudeAnimatedPet` task is still present, the installer tries to delete it once, so the pet does not launch twice. If that delete fails without admin rights, delete the old task once manually from Task Scheduler Library.
-   This will:
-   - `pip install` the dependencies (PyQt5, psutil, pywin32)
-   - Create the Startup shortcut described above, compulsory, not a fallback.
-
+2. Double-click `install.bat` inside that folder. No administrator rights are needed. It will `pip install` the dependencies (PyQt5, psutil, pywin32), create the Startup shortcut, and delete an old `ClaudeAnimatedPet` Scheduled Task once if one is still present.
 3. Start it right now, without rebooting, by double-clicking `run_pet.bat`.
 
-From your next login onward, it just shows up on its own.
+From your next login onward, it just shows up on its own. Windows staggers Startup apps by about 10-15 seconds after login, so the pet appears in about 10-15 seconds, not instantly. That delay is accepted for reliability.
+
+#### Uninstalling (Windows)
+
+Double-click `uninstall.bat` inside the project folder. It runs as administrator, because deleting the old Scheduled Task (if present) needs admin rights.
+
+It will, in order, delete the Startup shortcut `ClaudeAnimatedPet.vbs`, delete the old Scheduled Task if present, try to stop the running pet process (best effort, only processes whose command line contains `pet.py`), and ask: Do you want to DELETE the project files too? (y/n) [Y = delete, N = keep]. Y deletes ONLY the project files in this folder, any other file is left untouched, then it prints `thank you for using my project - Chaitany` and closes.
+
+Manual uninstall: delete `ClaudeAnimatedPet.vbs` from the Startup folder, delete the old task once with `schtasks /Delete /TN "ClaudeAnimatedPet" /F` if present, then delete the project folder.
 
 ### macOS
 
 Requirements: macOS 11+, Python 3.9+ on your `PATH` as `python3` (`brew install python3` is the easiest route if you use Homebrew).
 
-1. Clone or download this repo, anywhere you like, same as Windows:
+1. Clone or download this repo, anywhere you like:
    ```
    git clone https://github.com/chaitanybuilds/claude-animated-pet.git
    ```
-2. From the repo root, run the Mac installer in `.mac/`:
+   The macOS port lives in `.mac/` and shares the repo root `assets/` folder, so do not move `.mac/` out of the repo on its own.
+2. From the repo root, run the Mac installer:
    ```
    chmod +x .mac/*.sh
    .mac/install.sh
    ```
    Or, without changing permissions: `bash .mac/install.sh`
-   This will `pip install` the dependencies from `.mac/requirements.txt` (PyQt5, psutil, and `pyobjc-framework-Cocoa` on macOS only), and register a per-user LaunchAgent at `~/Library/LaunchAgents/com.chaitanybuilds.claudeanimatedpet.plist`, with `RunAtLoad`, so it starts at every login. No `sudo` is needed.
+   No `sudo` is needed. It will `pip install` the dependencies from `.mac/requirements.txt` (PyQt5, psutil, and `pyobjc-framework-Cocoa` on macOS only), and register a per-user LaunchAgent at `~/Library/LaunchAgents/com.chaitanybuilds.claudeanimatedpet.plist`, so it starts at every login.
 3. Start it right now, without logging out, with `bash .mac/run_pet.sh`.
 
 First run only: macOS will likely prompt for Accessibility and/or Automation permission the first time the pet tries to read the frontmost app or open Terminal. Grant it once in **System Settings → Privacy & Security**. If you skip it, the pet still runs and drags around fine, it just will not react to the app in front of you.
 
-Full Mac instructions, differences, troubleshooting, and uninstall steps are in `.mac/README.md`.
+Full Mac instructions, differences, and troubleshooting are in `.mac/README.md`.
 
 #### Uninstalling (macOS)
 
@@ -93,20 +82,7 @@ bash .mac/uninstall.sh
 
 It unloads and deletes the LaunchAgent, tries to stop the running pet, and asks: Do you want to DELETE the project files too? (y/n) [Y = delete, N = keep]. Y deletes ONLY the files inside `.mac/` (`src/`, `install.sh`, `run_pet.sh`, `requirements.txt`, `README.md`, `pet_config.json`, and `uninstall.sh` itself last). The repo root `assets/`, root `README.md`, and Windows files are NOT deleted. After a Y delete, the empty `.mac/` folder itself remains, delete it manually if you want it gone.
 
-### Uninstalling (Windows)
-
-Double-click `uninstall.bat` inside the project folder. It runs as administrator, because deleting the old Scheduled Task (if present) needs admin rights.
-
-It will, in order:
-- Delete the Startup shortcut `ClaudeAnimatedPet.vbs` from `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup`
-- Delete the old Scheduled Task `ClaudeAnimatedPet`, if present, so the pet does not launch twice
-- Try to stop the running pet process, best effort only, only processes whose command line contains `pet.py`
-- Ask: Do you want to DELETE the project files too? (y/n) [Y = delete, N = keep]
-  - Y deletes ONLY the project files in this folder: `src/`, `assets/`, `.git/`, `gen_sprites.py`, `gen_sprites_mascot.py`, `install.bat`, `run_pet.bat`, `requirements.txt`, `LICENSE`, `ASSETS-LICENSE.md`, `README.md`, `.gitignore`, `pet_config.json`, and `uninstall.bat` itself as the last step. Any other file in this folder is left untouched.
-  - N keeps all project files, so you can run `uninstall.bat` again later.
-- Print `thank you for using my project - Chaitany`, wait for a key press, then close the terminal.
-
-Manual uninstall, if you do not want to run `uninstall.bat`: delete `ClaudeAnimatedPet.vbs` from the Startup folder above, delete the old task once with `schtasks /Delete /TN "ClaudeAnimatedPet" /F` if present, then delete the project folder. That is the entire footprint: no registry entries, no background services.
+Manual uninstall: `launchctl unload ~/Library/LaunchAgents/com.chaitanybuilds.claudeanimatedpet.plist && rm ~/Library/LaunchAgents/com.chaitanybuilds.claudeanimatedpet.plist`, then delete the `.mac/` folder.
 
 ## Project structure
 
