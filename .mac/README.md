@@ -45,15 +45,15 @@ If you skip it, the pet still runs and drags around fine, it just will not react
 
 ## What works on macOS, and what is different from Windows
 
-- **App reactions:** every 4 seconds, via AppKit `NSWorkspace` when `pyobjc-framework-Cocoa` is installed, with an automatic fallback to `osascript` / System Events if it is not. Mac app names are translated in `MAC_APP_NAME_MAP` in `.mac/src/pet.py` to the same keys the Windows version uses, for example "Google Chrome" → `chrome.exe`, "Visual Studio Code" → `code.exe`, "Discord" → `discord.exe`, "Finder" → `explorer.exe` (ignored, like Windows Explorer). No duplicate joke pools.
-- **Terminals:** Terminal, iTerm2, Warp, Hyper, Alacritty, and kitty all get the one generic "terminal" pool. macOS can only see which terminal app is in front, not which shell or CLI tool is running inside it, so the per-shell pools (PowerShell, cmd, Git, Node, Python, WSL) stay Windows-only by design.
-- **Claude Code:** detected automatically in the background, same as Windows. It scans for a `claude` process whose exe path is in `.local/bin` (for example `~/.local/bin/claude`), plus a `node` fallback whose command line contains claude and `.local`. When Claude Code starts, the pet says one Claude Code joke once, then the 30-second joke pool switches to the Claude Code pool until it stops.
-- **Click-to-launch:** click the pet and it opens Terminal.app (via `osascript`, `tell application "Terminal" to do script "claude"`) and runs `claude` there. The pet never closes that terminal, because for Claude Code the terminal is the app. If Claude Code CLI is not installed, the pet does not open a terminal, it directly says: "Claude Code CLI is not installed. Download Claude Code, restart your Mac, and try again." The same message is shown if Claude is not found in 25 seconds.
-- **Process priority:** Windows priority classes do not exist on macOS, so the pet best-effort renices itself with `os.nice(-10)`. If macOS refuses that for a non-root user, which is normal, it is silently ignored and the pet runs at normal priority.
-- **Bye bubble:** Windows-only. macOS has no equivalent of Windows' `WM_QUERYENDSESSION` hook, so logging out simply quits the pet, with no bye bubble.
-- **Closing the pet:** window close is ignored on purpose, same as Windows. To quit manually, quit the `pet.py` process from Activity Monitor. The pet's position is saved to `.mac/pet_config.json`, not to the repo root config.
-- **System stats, jokes, idle fidgets:** same as Windows, on the same timers. Temperature is best-effort: `psutil` does not report CPU temperature on macOS, so that trigger falls back to `nvidia-smi` if present, otherwise it stays silent while RAM and CPU keep working.
-- **Linux:** not a target of this repo. No installer is provided for Linux, but the pet still runs there with reduced functionality, while Windows/macOS-only detection stays silent rather than erroring.
+- **App reactions:** via AppKit `NSWorkspace` when `pyobjc-framework-Cocoa` is installed, with an automatic fallback to `osascript` / System Events if it is not. Mac app names are translated in `MAC_APP_NAME_MAP` to the same keys Windows uses, so no duplicate joke pools.
+- **Terminals:** Terminal, iTerm2, Warp, Hyper, Alacritty, and kitty all share one generic terminal pool. Per-shell pools (PowerShell, cmd, Git, Node, Python, WSL) stay Windows-only.
+- **Claude Code:** detected automatically in the background, same as Windows, from `~/.local/bin/claude` plus a `node` fallback.
+- **Click-to-launch:** opens Terminal.app and runs `claude` there. It never closes that terminal, and if Claude Code is not installed, it says so directly instead of opening anything.
+- **Process priority:** a best-effort `os.nice(-10)`, silently ignored if macOS refuses it for a non-root user.
+- **Bye bubble:** Windows-only. On macOS, logging out simply quits the pet.
+- **Closing the pet:** window close is ignored, same as Windows. Quit the `pet.py` process from Activity Monitor. Its position is saved to `.mac/pet_config.json`.
+- **Stats, jokes, and idle fidgets:** same as Windows, on the same timers. Temperature is best-effort.
+- **Linux:** not a target of this repo, but the pet still runs there with reduced functionality.
 
 ## Uninstalling (macOS)
 
